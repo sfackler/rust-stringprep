@@ -4,3 +4,5 @@ version = "0.1.0"
 authors = ["Steven Fackler <sfackler@gmail.com>"]
 
 [dependencies]
+unicode-bidi = "0.3"
+unicode-normalization = "0.1"
