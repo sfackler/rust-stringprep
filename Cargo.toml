@@ -2,6 +2,11 @@
 name = "stringprep"
 version = "0.1.0"
 authors = ["Steven Fackler <sfackler@gmail.com>"]
+license = "MIT/Apache-2.0"
+description = "An implementation of the stringprep algorithm"
+repository = "https://github.com/sfackler/rust-stringprep"
+documentation = "https://docs.rs/strinprep/0.1.0/stringprep"
+readme = "README.md"
 
 [dependencies]
 unicode-bidi = "0.2"
