@@ -1,6 +1,6 @@
 # stringprep
 
-[![Build Status](https://travis-ci.org/sfackler/stringprep?branch=master)](https://travis-ci.org/sfackler/stringprep)
+[![Build Status](https://travis-ci.org/sfackler/rust-stringprep.svg?branch=master)](https://travis-ci.org/sfackler/rust-stringprep)
 
 [Documentation](https://docs.rs/stringprep/0.1.0/stringprep)
 
