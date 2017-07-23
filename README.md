@@ -1,8 +1,8 @@
 # stringprep
 
-[![Build Status](https://travis-ci.org/sfackler/rust-stringprep.svg?branch=master)](https://travis-ci.org/sfackler/rust-stringprep)
+[![CircleCI](https://circleci.com/gh/sfackler/rust-stringprep.svg?style=shield)](https://circleci.com/gh/sfackler/rust-stringprep)
 
-[Documentation](https://docs.rs/stringprep/0.1.0/stringprep)
+[Documentation](https://docs.rs/stringprep)
 
 An implementation of the stringprep algorithm as defined in [RFC 3454][].
 
