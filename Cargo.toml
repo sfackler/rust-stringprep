@@ -9,5 +9,5 @@ documentation = "https://docs.rs/stringprep/0.1.0/stringprep"
 readme = "README.md"
 
 [dependencies]
-unicode-bidi = "0.2"
+unicode-bidi = "0.3"
 unicode-normalization = "0.1"
