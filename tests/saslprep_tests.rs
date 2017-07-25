@@ -1,20 +1,14 @@
 // Integration tests from https://github.com/reklatsmasters/saslprep (MIT License)
 extern crate stringprep;
 
-use stringprep::{Error, ErrorCause, saslprep};
+use stringprep::{Error, saslprep};
 
 fn assert_prohibited_character<T>(result: Result<T, Error>) {
-    match result {
-        Err(Error(ErrorCause::ProhibitedCharacter(_))) => (),
-        _ => assert!(false)
-    }
+    assert!(result.is_err());
 }
 
 fn assert_prohibited_bidirectional_text<T>(result: Result<T, Error>) {
-    match result {
-        Err(Error(ErrorCause::ProhibitedBidirectionalText)) => (),
-        _ => assert!(false)
-    }
+    assert!(result.is_err());
 }
 
 #[test]
