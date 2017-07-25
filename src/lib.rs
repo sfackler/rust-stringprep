@@ -87,26 +87,35 @@ pub fn saslprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
     }
 
     // RFC3454, 6. Bidirectional Characters
-    if normalized.contains(tables::bidi_r_or_al) {
-        // 2) If a string contains any RandALCat character, the string
-        // MUST NOT contain any LCat character.
-        if normalized.contains(tables::bidi_l) {
-            return Err(Error(ErrorCause::ProhibitedBidirectionalText));
-        }
-
-        // 3) If a string contains any RandALCat character, a RandALCat
-        // character MUST be the first character of the string, and a
-        // RandALCat character MUST be the last character of the string.
-        if !tables::bidi_r_or_al(normalized.chars().next().unwrap()) ||
-           !tables::bidi_r_or_al(normalized.chars().next_back().unwrap()) {
-            return Err(Error(ErrorCause::ProhibitedBidirectionalText));
-        }
+    if is_prohibited_bidirectional_text(&normalized) {
+        return Err(Error(ErrorCause::ProhibitedBidirectionalText));
     }
 
     // 2.5 Unassigned Code Points
     // FIXME: Reject unassigned code points.
 
     Ok(Cow::Owned(normalized))
+}
+
+// RFC3454, 6. Bidirectional Characters
+fn is_prohibited_bidirectional_text(s: &str) -> bool {
+    if s.contains(tables::bidi_r_or_al) {
+        // 2) If a string contains any RandALCat character, the string
+        // MUST NOT contain any LCat character.
+        if s.contains(tables::bidi_l) {
+            return true;
+        }
+
+        // 3) If a string contains any RandALCat character, a RandALCat
+        // character MUST be the first character of the string, and a
+        // RandALCat character MUST be the last character of the string.
+        if !tables::bidi_r_or_al(s.chars().next().unwrap()) ||
+           !tables::bidi_r_or_al(s.chars().next_back().unwrap()) {
+            return true;
+        }
+    }
+
+    false
 }
 
 /// [RFC 3419]: https://tools.ietf.org/html/rfc3419
@@ -142,24 +151,105 @@ pub fn nameprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
     }
 
     // RFC3454, 6. Bidirectional Characters
-    if normalized.contains(tables::bidi_r_or_al) {
-        // 2) If a string contains any RandALCat character, the string
-        // MUST NOT contain any LCat character.
-        if normalized.contains(tables::bidi_l) {
-            return Err(Error(ErrorCause::ProhibitedBidirectionalText));
-        }
-
-        // 3) If a string contains any RandALCat character, a RandALCat
-        // character MUST be the first character of the string, and a
-        // RandALCat character MUST be the last character of the string.
-        if !tables::bidi_r_or_al(normalized.chars().next().unwrap()) ||
-           !tables::bidi_r_or_al(normalized.chars().next_back().unwrap()) {
-            return Err(Error(ErrorCause::ProhibitedBidirectionalText));
-        }
+    if is_prohibited_bidirectional_text(&normalized) {
+        return Err(Error(ErrorCause::ProhibitedBidirectionalText));
     }
 
     // 7 Unassigned Code Points
-    // TODO: Reject unassigned code points.
+    // FIXME: Reject unassigned code points.
+
+    Ok(Cow::Owned(normalized))
+}
+
+/// [RFC 3920, Appendix A] https://tools.ietf.org/html/rfc3920#appendix-A
+pub fn nodeprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
+    // A.3. Mapping
+    let mapped = s.chars()
+        .filter(|&c| !tables::commonly_mapped_to_nothing(c))
+        .collect::<String>();
+
+    // FIXME: using `to_lowercase` as proxy for case folding
+    let mapped = mapped.to_lowercase();
+
+    // A.4. Normalization
+    let normalized = mapped.nfkc().collect::<String>();
+
+    // A.5. Prohibited Output
+    let prohibited = normalized
+        .chars()
+        .filter(|&c| {
+            tables::ascii_space_character(c) /* C.1.1 */ ||
+            tables::non_ascii_space_character(c) /* C.1.2 */ ||
+            tables::ascii_control_character(c) /* C.2.1 */ ||
+            tables::non_ascii_control_character(c) /* C.2.2 */ ||
+            tables::private_use(c) /* C.3 */ ||
+            tables::non_character_code_point(c) /* C.4 */ ||
+            tables::surrogate_code(c) /* C.5 */ ||
+            tables::inappropriate_for_plain_text(c) /* C.6 */ ||
+            tables::inappropriate_for_canonical_representation(c) /* C.7 */ ||
+            tables::change_display_properties_or_deprecated(c) /* C.9 */ ||
+            tables::tagging_character(c) /* C.9 */ ||
+            prohibited_node_character(c)
+        })
+        .next();
+    if let Some(c) = prohibited {
+        return Err(Error(ErrorCause::ProhibitedCharacter(c)));
+    }
+
+    // RFC3454, 6. Bidirectional Characters
+    if is_prohibited_bidirectional_text(&normalized) {
+        return Err(Error(ErrorCause::ProhibitedBidirectionalText));
+    }
+
+    // FIXME: Reject unassigned code points.
+
+    Ok(Cow::Owned(normalized))
+}
+
+// Additional characters not allowed in JID nodes, by RFC3920.
+fn prohibited_node_character(c: char) -> bool {
+    match c {
+        '"' | '&' | '\'' | '/' | ':' | '<' | '>' | '@' => true,
+        _ => false
+    }
+}
+
+/// [RFC 3920, Appendix B] https://tools.ietf.org/html/rfc3920#appendix-B
+pub fn resourceprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
+    // B.3. Mapping
+    let mapped = s.chars()
+        .filter(|&c| !tables::commonly_mapped_to_nothing(c))
+        .collect::<String>();
+
+    // B.4. Normalization
+    let normalized = mapped.nfkc().collect::<String>();
+
+    // B.5. Prohibited Output
+    let prohibited = normalized
+        .chars()
+        .filter(|&c| {
+            tables::non_ascii_space_character(c) /* C.1.2 */ ||
+            tables::ascii_control_character(c) /* C.2.1 */ ||
+            tables::non_ascii_control_character(c) /* C.2.2 */ ||
+            tables::private_use(c) /* C.3 */ ||
+            tables::non_character_code_point(c) /* C.4 */ ||
+            tables::surrogate_code(c) /* C.5 */ ||
+            tables::inappropriate_for_plain_text(c) /* C.6 */ ||
+            tables::inappropriate_for_canonical_representation(c) /* C.7 */ ||
+            tables::change_display_properties_or_deprecated(c) /* C.9 */ ||
+            tables::tagging_character(c) /* C.9 */
+        })
+        .next();
+    if let Some(c) = prohibited {
+        return Err(Error(ErrorCause::ProhibitedCharacter(c)));
+    }
+
+    // RFC3454, 6. Bidirectional Characters
+    if is_prohibited_bidirectional_text(&normalized) {
+        return Err(Error(ErrorCause::ProhibitedBidirectionalText));
+    }
+
+    // FIXME: Reject unassigned code points.
 
     Ok(Cow::Owned(normalized))
 }
@@ -168,12 +258,28 @@ pub fn nameprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
 mod test {
     use super::*;
 
+	fn assert_prohibited_character<T>(result: Result<T, Error>) {
+		match result {
+			Err(Error(ErrorCause::ProhibitedCharacter(_))) => (),
+			_ => assert!(false)
+		}
+	}
+
     // RFC4013, 3. Examples
     #[test]
     fn saslprep_examples() {
-        match saslprep("\u{0007}") {
-            Err(Error(ErrorCause::ProhibitedCharacter(_))) => (),
-            _ => assert!(false)
-        }
+		assert_prohibited_character(saslprep("\u{0007}"));
+    }
+
+	#[test]
+	fn nodeprep_examples() {
+        assert_prohibited_character(nodeprep(" "));
+        assert_prohibited_character(nodeprep("\u{00a0}"));
+        assert_prohibited_character(nodeprep("foo@bar"));
+	}
+
+    #[test]
+    fn resourceprep_examples() {
+        assert_eq!("foo@bar", resourceprep("foo@bar").unwrap());
     }
 }

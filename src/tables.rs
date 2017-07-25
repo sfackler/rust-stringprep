@@ -13,6 +13,11 @@ pub fn commonly_mapped_to_nothing(c: char) -> bool {
     }
 }
 
+/// C.1.1 ASCII space characters
+pub fn ascii_space_character(c: char) -> bool {
+    c == ' '
+}
+
 /// C.1.2 Non-ASCII space characters
 pub fn non_ascii_space_character(c: char) -> bool {
     match c {
