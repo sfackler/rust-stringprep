@@ -1,6 +1,16 @@
 //! Character Tables
 use unicode_bidi::{bidi_class, BidiClass};
 
+use super::rfc3454;
+
+/// A.1 Unassigned code points in Unicode 3.2
+pub fn unassigned_code_point(c: char) -> bool {
+    match rfc3454::table_lookup(rfc3454::A_1, c) {
+        Some(_) => true,
+        None => false,
+    }
+}
+
 /// B.1 Commonly mapped to nothing
 pub fn commonly_mapped_to_nothing(c: char) -> bool {
     match c {
@@ -11,6 +21,26 @@ pub fn commonly_mapped_to_nothing(c: char) -> bool {
         '\u{FE0E}' | '\u{FE0F}' | '\u{FEFF}' => true,
         _ => false,
     }
+}
+
+/// B.2 Mapping for case-folding used with NFKC.
+pub fn case_fold(s: &str) -> String {
+    let mut result = String::new();
+
+    // Each character either maps to a sequence of replacement characters,
+    // or is passed through as-is.
+    for c in s.chars() {
+        if let Some(entry) = rfc3454::table_lookup(rfc3454::B_2, c) {
+            let (_, _, replace) = entry;
+            if let Some(replace) = replace {
+                result.push_str(replace);
+                continue;
+            }
+        }
+        result.push(c);
+    }
+
+    result
 }
 
 /// C.1.1 ASCII space characters

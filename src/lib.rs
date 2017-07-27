@@ -12,6 +12,7 @@ use std::error;
 use std::fmt;
 use unicode_normalization::UnicodeNormalization;
 
+mod rfc3454;
 pub mod tables;
 
 /// Describes why a string failed stringprep normalization.
@@ -69,7 +70,7 @@ pub fn saslprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
     // 2.3 Prohibited Output
     let prohibited = normalized
         .chars()
-        .filter(|&c| {
+        .find(|&c| {
             tables::non_ascii_space_character(c) /* C.1.2 */ ||
             tables::ascii_control_character(c) /* C.2.1 */ ||
             tables::non_ascii_control_character(c) /* C.2.2 */ ||
@@ -80,19 +81,23 @@ pub fn saslprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
             tables::inappropriate_for_canonical_representation(c) /* C.7 */ ||
             tables::change_display_properties_or_deprecated(c) /* C.8 */ ||
             tables::tagging_character(c) /* C.9 */
-        })
-        .next();
+        });
     if let Some(c) = prohibited {
         return Err(Error(ErrorCause::ProhibitedCharacter(c)));
     }
 
-    // RFC3454, 6. Bidirectional Characters
+    // 2.4. Bidirectional Characters
     if is_prohibited_bidirectional_text(&normalized) {
         return Err(Error(ErrorCause::ProhibitedBidirectionalText));
     }
 
     // 2.5 Unassigned Code Points
-    // FIXME: Reject unassigned code points.
+    let unassigned = normalized
+        .chars()
+        .find(|&c| tables::unassigned_code_point(c));
+    if let Some(c) = unassigned {
+        return Err(Error(ErrorCause::ProhibitedCharacter(c)));
+    }
 
     Ok(Cow::Owned(normalized))
 }
@@ -125,8 +130,7 @@ pub fn nameprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
         .collect::<String>();
 
-    // FIXME: using `to_lowercase` as proxy for case folding
-    let mapped = mapped.to_lowercase();
+    let mapped = tables::case_fold(&mapped);
 
     // 4. Normalization
     let normalized = mapped.nfkc().collect::<String>();
@@ -134,7 +138,7 @@ pub fn nameprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
     // 5. Prohibited Output
     let prohibited = normalized
         .chars()
-        .filter(|&c| {
+        .find(|&c| {
             tables::non_ascii_space_character(c) /* C.1.2 */ ||
             tables::non_ascii_control_character(c) /* C.2.2 */ ||
             tables::private_use(c) /* C.3 */ ||
@@ -144,19 +148,23 @@ pub fn nameprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
             tables::inappropriate_for_canonical_representation(c) /* C.7 */ ||
             tables::change_display_properties_or_deprecated(c) /* C.9 */ ||
             tables::tagging_character(c) /* C.9 */
-        })
-        .next();
+        });
     if let Some(c) = prohibited {
         return Err(Error(ErrorCause::ProhibitedCharacter(c)));
     }
 
-    // RFC3454, 6. Bidirectional Characters
+    // 6. Bidirectional Characters
     if is_prohibited_bidirectional_text(&normalized) {
         return Err(Error(ErrorCause::ProhibitedBidirectionalText));
     }
 
     // 7 Unassigned Code Points
-    // FIXME: Reject unassigned code points.
+    let unassigned = normalized
+        .chars()
+        .find(|&c| tables::unassigned_code_point(c));
+    if let Some(c) = unassigned {
+        return Err(Error(ErrorCause::ProhibitedCharacter(c)));
+    }
 
     Ok(Cow::Owned(normalized))
 }
@@ -168,8 +176,7 @@ pub fn nodeprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
         .collect::<String>();
 
-    // FIXME: using `to_lowercase` as proxy for case folding
-    let mapped = mapped.to_lowercase();
+    let mapped = tables::case_fold(&mapped);
 
     // A.4. Normalization
     let normalized = mapped.nfkc().collect::<String>();
@@ -177,7 +184,7 @@ pub fn nodeprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
     // A.5. Prohibited Output
     let prohibited = normalized
         .chars()
-        .filter(|&c| {
+        .find(|&c| {
             tables::ascii_space_character(c) /* C.1.1 */ ||
             tables::non_ascii_space_character(c) /* C.1.2 */ ||
             tables::ascii_control_character(c) /* C.2.1 */ ||
@@ -190,18 +197,22 @@ pub fn nodeprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
             tables::change_display_properties_or_deprecated(c) /* C.9 */ ||
             tables::tagging_character(c) /* C.9 */ ||
             prohibited_node_character(c)
-        })
-        .next();
+        });
     if let Some(c) = prohibited {
         return Err(Error(ErrorCause::ProhibitedCharacter(c)));
     }
 
-    // RFC3454, 6. Bidirectional Characters
+    // A.6. Bidirectional Characters
     if is_prohibited_bidirectional_text(&normalized) {
         return Err(Error(ErrorCause::ProhibitedBidirectionalText));
     }
 
-    // FIXME: Reject unassigned code points.
+    let unassigned = normalized
+        .chars()
+        .find(|&c| tables::unassigned_code_point(c));
+    if let Some(c) = unassigned {
+        return Err(Error(ErrorCause::ProhibitedCharacter(c)));
+    }
 
     Ok(Cow::Owned(normalized))
 }
@@ -227,7 +238,7 @@ pub fn resourceprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
     // B.5. Prohibited Output
     let prohibited = normalized
         .chars()
-        .filter(|&c| {
+        .find(|&c| {
             tables::non_ascii_space_character(c) /* C.1.2 */ ||
             tables::ascii_control_character(c) /* C.2.1 */ ||
             tables::non_ascii_control_character(c) /* C.2.2 */ ||
@@ -238,18 +249,22 @@ pub fn resourceprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
             tables::inappropriate_for_canonical_representation(c) /* C.7 */ ||
             tables::change_display_properties_or_deprecated(c) /* C.9 */ ||
             tables::tagging_character(c) /* C.9 */
-        })
-        .next();
+        });
     if let Some(c) = prohibited {
         return Err(Error(ErrorCause::ProhibitedCharacter(c)));
     }
 
-    // RFC3454, 6. Bidirectional Characters
+    // B.6. Bidirectional Characters
     if is_prohibited_bidirectional_text(&normalized) {
         return Err(Error(ErrorCause::ProhibitedBidirectionalText));
     }
 
-    // FIXME: Reject unassigned code points.
+    let unassigned = normalized
+        .chars()
+        .find(|&c| tables::unassigned_code_point(c));
+    if let Some(c) = unassigned {
+        return Err(Error(ErrorCause::ProhibitedCharacter(c)));
+    }
 
     Ok(Cow::Owned(normalized))
 }

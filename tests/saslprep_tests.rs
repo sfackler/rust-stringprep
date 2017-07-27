@@ -73,9 +73,7 @@ fn randalcat_should_be_first_and_last() {
     assert_prohibited_bidirectional_text(saslprep("\u{0627}\u{0031}"));
 }
 
-#[ignore]
-#[should_panic]
 #[test]
 fn should_handle_unassigned_code_points() {
-    saslprep("a\u{0487}").unwrap();
+    assert_prohibited_character(saslprep("a\u{0487}"));
 }

@@ -43,7 +43,6 @@ fn should_case_fold_ascii() {
 }
 
 // 4.3 Case folding 8bit U+00DF (german sharp s)
-#[ignore]
 #[test]
 fn should_case_fold_8bit() {
     assert_eq!("ss", nameprep("\u{00df}").unwrap());
@@ -56,7 +55,6 @@ fn should_case_fold_16bit() {
 }
 
 // 4.5 Case folding multibyte U+0143 U+037A
-#[ignore]
 #[test]
 fn should_case_fold_multibyte() {
     let input = "\u{0143}\u{037a}";
@@ -65,7 +63,6 @@ fn should_case_fold_multibyte() {
 }
 
 // 4.6 Case folding U+2121 U+33C6 U+1D7BB
-#[ignore]
 #[test]
 fn should_case_fold() {
     let input = "\u{2121}\u{33c6}\u{1d7bb}";
@@ -82,7 +79,6 @@ fn should_normalize() {
 }
 
 // 4.8 Case folding U+1FB7 and normalization
-#[ignore]
 #[test]
 fn should_case_fold_and_normalize() {
     let input = "\u{1fb7}";
@@ -272,14 +268,12 @@ fn should_permit_randalcat2() {
 }
 
 // 4.43 Unassigned code point U+E0002
-#[ignore]
 #[test]
 fn should_prohibit_unassigned_code_point() {
     assert_prohibited_character(nameprep("\u{e0002}"));
 }
 
 // 4.44 Larger test (shrinking)
-#[ignore]
 #[test]
 fn should_shrink() {
     let input = "X\u{00ad}\u{00df}\u{0130}\u{2121}j\u{030c}\u{00a0}\u{00aa}\u{03b0}\u{2000}";
@@ -288,7 +282,6 @@ fn should_shrink() {
 }
 
 // 4.45 Larger test (expanding)
-#[ignore]
 #[test]
 fn should_expand() {
     let input = "X\u{00df}\u{3316}\u{0130}\u{2121}\u{249f}\u{3300}";
