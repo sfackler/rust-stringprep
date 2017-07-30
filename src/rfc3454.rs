@@ -1,40 +1,5 @@
-// Each row of a lookup table contains:
-// - A start, or only, character.
-// - An optional end character, defining an inclusive range.
-// - An optional replacement string.
-pub type TableEntry<'a> = (char, Option<char>, Option<&'a str>);
-
-// Try to find a character in a lookup table.
-pub fn table_lookup<'a>(table: &'a [TableEntry<'a>], c: char) -> Option<TableEntry<'a>> {
-    let mut low = 0;
-    let mut high = table.len();
-
-    // Binary search.
-    while low < high {
-        let middle = (low + high) / 2;
-        let entry = table[middle];
-        let (start, end, _) = entry;
-        if c == start {
-            return Some(entry);
-        }
-        if c < start {
-            high = middle;
-            continue;
-        }
-        if let Some(end) = end {
-            if c <= end {
-                return Some(entry);
-            }
-        }
-        low = middle + 1;
-    }
-
-    return None
-}
-
-// RFC 3454, Appendix A.1 Unassigned code points in Unicode 3.2
-pub const A_1: &[TableEntry] = &[
-    ('\u{0221}', None, None),
+// RFC 3454, Appendix A.1 Unassigned code points in Unicode 3.2 pub const A_1: &[(char, Option<char>, Option<&str>] = &[
+pub const A_1: &[(char, Option<char>, Option<&str>)] = &[
     ('\u{0234}', Some('\u{024F}'), None),
     ('\u{02AE}', Some('\u{02AF}'), None),
     ('\u{02EF}', Some('\u{02FF}'), None),
@@ -433,7 +398,7 @@ pub const A_1: &[TableEntry] = &[
 ];
 
 // RFC 3454, Appendix B.2 Mapping for case-folding used with NFKC.
-pub const B_2: &[TableEntry] = &[
+pub const B_2: &[(char, Option<char>, Option<&str>)] = &[
     ('\u{0041}', None, Some("\u{0061}")),
     ('\u{0042}', None, Some("\u{0062}")),
     ('\u{0043}', None, Some("\u{0063}")),
