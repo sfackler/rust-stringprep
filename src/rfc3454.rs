@@ -1,5 +1,5 @@
-// RFC 3454, Appendix A.1 Unassigned code points in Unicode 3.2 pub const A_1: &[(char, Option<char>, Option<&str>] = &[
 pub const A_1: &[(char, Option<char>, Option<&str>)] = &[
+    ('\u{0221}', None, None),
     ('\u{0234}', Some('\u{024F}'), None),
     ('\u{02AE}', Some('\u{02AF}'), None),
     ('\u{02EF}', Some('\u{02FF}'), None),
@@ -397,7 +397,6 @@ pub const A_1: &[(char, Option<char>, Option<&str>)] = &[
     ('\u{E0080}', Some('\u{EFFFD}'), None),
 ];
 
-// RFC 3454, Appendix B.2 Mapping for case-folding used with NFKC.
 pub const B_2: &[(char, Option<char>, Option<&str>)] = &[
     ('\u{0041}', None, Some("\u{0061}")),
     ('\u{0042}', None, Some("\u{0062}")),
@@ -1771,3 +1770,4 @@ pub const B_2: &[(char, Option<char>, Option<&str>)] = &[
     ('\u{1D7A8}', None, Some("\u{03C9}")),
     ('\u{1D7BB}', None, Some("\u{03C3}")),
 ];
+

@@ -2,31 +2,26 @@ extern crate regex;
 
 use regex::Regex;
 
-use std::env;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::{BufReader, BufWriter};
-use std::path::Path;
+use std::io::{BufRead, BufWriter};
 
 // Generate character mapping tables directly from the specification.
 fn main() {
     // Input from the RFC.
-    let in_file = File::open("rfc3454.txt").unwrap();
-    let mut reader = BufReader::new(in_file);
+    let reader = include_bytes!("rfc3454.txt");
 
     // Output to a Rust source file.
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let dest_path = Path::new(&out_dir).join("rfc3454.rs");
-    let out_file = File::create(&dest_path).unwrap();
+    let out_file = File::create("../src/rfc3454.rs").unwrap();
     let mut writer = BufWriter::new(out_file);
 
     // Generate tables.
-    include_table(&mut writer, &mut reader, "A.1");
-    include_table(&mut writer, &mut reader, "B.2");
+    include_table(&mut writer, &mut &reader[..], "A.1");
+    include_table(&mut writer, &mut &reader[..], "B.2");
 }
 
 // Generate code for the named mapping table.
-fn include_table<R: Read, W: Write>(writer: &mut BufWriter<W>, reader: &mut BufReader<R>, tablename: &str) {
+fn include_table<R: BufRead, W: Write>(writer: &mut W, reader: &mut R, tablename: &str) {
     // Scan to start of table.
     loop {
         let mut line = String::new();
@@ -37,7 +32,7 @@ fn include_table<R: Read, W: Write>(writer: &mut BufWriter<W>, reader: &mut BufR
     }
 
     // Output table declaration.
-    write!(writer, "pub const RFC3454_{}: &[(char, Option<char>, Option<&str>)] = &[\n", tablename.replace(".", "_")).unwrap();
+    write!(writer, "pub const {}: &[(char, Option<char>, Option<&str>)] = &[\n", tablename.replace(".", "_")).unwrap();
 
     // For each line:
     let target_re = Regex::new(r"([0-9A-F]+)(-([0-9A-F]+))?(; ([0-9A-F]+)( ([0-9A-F]+))?( ([0-9A-F]+))?( ([0-9A-F]+))?;)?").unwrap();
