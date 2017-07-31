@@ -25,7 +25,7 @@ pub fn commonly_mapped_to_nothing(c: char) -> bool {
 }
 
 /// B.2 Mapping for case-folding used with NFKC.
-pub fn case_fold(s: &str) -> String {
+pub fn case_fold_for_nfkc(s: &str) -> String {
     let mut result = String::new();
 
     // Each character either maps to a sequence of replacement characters,

@@ -130,7 +130,7 @@ pub fn nameprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
         .collect::<String>();
 
-    let mapped = tables::case_fold(&mapped);
+    let mapped = tables::case_fold_for_nfkc(&mapped);
 
     // 4. Normalization
     let normalized = mapped.nfkc().collect::<String>();
@@ -176,7 +176,7 @@ pub fn nodeprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
         .collect::<String>();
 
-    let mapped = tables::case_fold(&mapped);
+    let mapped = tables::case_fold_for_nfkc(&mapped);
 
     // A.4. Normalization
     let normalized = mapped.nfkc().collect::<String>();
