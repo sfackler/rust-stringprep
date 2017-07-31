@@ -32,7 +32,7 @@ fn include_table<R: BufRead, W: Write>(writer: &mut W, reader: &mut R, tablename
     }
 
     // Output table declaration.
-    write!(writer, "pub const {}: &[(char, Option<char>, Option<&str>)] = &[\n", tablename.replace(".", "_")).unwrap();
+    write!(writer, "pub const {}: &[(char, char, &str)] = &[\n", tablename.replace(".", "_")).unwrap();
 
     // For each line:
     let target_re = Regex::new(r"([0-9A-F]+)(-([0-9A-F]+))?(; ([0-9A-F]+)( ([0-9A-F]+))?( ([0-9A-F]+))?( ([0-9A-F]+))?;)?").unwrap();
@@ -52,23 +52,11 @@ fn include_table<R: BufRead, W: Write>(writer: &mut W, reader: &mut R, tablename
 
         // Generate an entry for each data line.
         if let Some(captures) = target_re.captures(&line) {
-            let start = captures.get(1).unwrap();
+            // start char
+            let start = captures.get(1).unwrap().as_str();
 
-            // '\u{start}',
-            let mut entry = String::from("'\\u{");
-            entry.push_str(start.as_str());
-            entry.push_str("}', ");
-
-            // '\u{start}', None,
-            // '\u{start}', Some('\u{end}'),
-            match captures.get(3) {
-                None => entry.push_str("None, "),
-                Some(end) => {
-                    entry.push_str("Some('\\u{");
-                    entry.push_str(end.as_str());
-                    entry.push_str("}'), ");
-                }
-            }
+            // end char (inclusive)
+            let end = captures.get(3).map_or(start, |m| m.as_str());
 
             // 0-4 character replacement string
             let mut replace = String::new();
@@ -83,18 +71,7 @@ fn include_table<R: BufRead, W: Write>(writer: &mut W, reader: &mut R, tablename
                 }
             }
 
-            // '\u{start}', None, None
-            // '\u{start}', None, Some("replace")
-            if replace.is_empty() {
-                entry.push_str("None");
-            } else {
-                entry.push_str("Some(\"");
-                entry.push_str(&replace);
-                entry.push_str("\")");
-            }
-
-            // Output entry for this line.
-            write!(writer, "    ({}),\n", entry).unwrap();
+            write!(writer, "    ('\\u{{{}}}', '\\u{{{}}}', \"{}\"),\n", start, end, replace).unwrap()
         }
     }
 

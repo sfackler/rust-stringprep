@@ -31,14 +31,10 @@ pub fn case_fold_for_nfkc(s: &str) -> String {
     // Each character either maps to a sequence of replacement characters,
     // or is passed through as-is.
     for c in s.chars() {
-        if let Some(entry) = table_lookup(rfc3454::B_2, c) {
-            let (_, _, replace) = entry;
-            if let Some(replace) = replace {
-                result.push_str(replace);
-                continue;
-            }
+        match table_lookup(rfc3454::B_2, c) {
+            Some((_, _, replace)) => result.push_str(replace),
+            None => result.push(c),
         }
-        result.push(c);
     }
 
     result
@@ -187,23 +183,19 @@ pub fn bidi_l(c: char) -> bool {
 }
 
 // Each row of a lookup table contains:
-// - A start, or only, character.
-// - An optional end character, defining an inclusive range.
-// - An optional replacement string.
-type TableEntry<'a> = (char, Option<char>, Option<&'a str>);
+// - A start character.
+// - An end character, defining an inclusive range.
+// - A possibly empty replacement string.
+type TableEntry = (char, char, &'static str);
 
 // Try to find a character in a lookup table.
-fn table_lookup<'a>(table: &'a [TableEntry<'a>], c: char) -> Option<TableEntry<'a>> {
+fn table_lookup(table: &'static [TableEntry], c: char) -> Option<TableEntry> {
     table
         .binary_search_by(|&(start, end, _)| match start.cmp(&c) {
             Ordering::Greater => Ordering::Greater,
             Ordering::Equal => Ordering::Equal,
-            Ordering::Less => {
-                match end {
-                    Some(end) if c <= end => Ordering::Equal,
-                    _ => Ordering::Less,
-                }
-            }
+            Ordering::Less if c <= end => Ordering::Equal,
+            Ordering::Less => Ordering::Less,
         })
         .ok()
         .map(|i| table[i])
