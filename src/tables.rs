@@ -1,6 +1,16 @@
 //! Character Tables
 use unicode_bidi::{bidi_class, BidiClass};
 
+use super::rfc3454;
+
+/// A.1 Unassigned code points in Unicode 3.2
+pub fn unassigned_code_point(c: char) -> bool {
+    match table_lookup(rfc3454::A_1, c) {
+        Some(_) => true,
+        None => false,
+    }
+}
+
 /// B.1 Commonly mapped to nothing
 pub fn commonly_mapped_to_nothing(c: char) -> bool {
     match c {
@@ -11,6 +21,31 @@ pub fn commonly_mapped_to_nothing(c: char) -> bool {
         '\u{FE0E}' | '\u{FE0F}' | '\u{FEFF}' => true,
         _ => false,
     }
+}
+
+/// B.2 Mapping for case-folding used with NFKC.
+pub fn case_fold(s: &str) -> String {
+    let mut result = String::new();
+
+    // Each character either maps to a sequence of replacement characters,
+    // or is passed through as-is.
+    for c in s.chars() {
+        if let Some(entry) = table_lookup(rfc3454::B_2, c) {
+            let (_, _, replace) = entry;
+            if let Some(replace) = replace {
+                result.push_str(replace);
+                continue;
+            }
+        }
+        result.push(c);
+    }
+
+    result
+}
+
+/// C.1.1 ASCII space characters
+pub fn ascii_space_character(c: char) -> bool {
+    c == ' '
 }
 
 /// C.1.2 Non-ASCII space characters
@@ -148,4 +183,38 @@ pub fn bidi_l(c: char) -> bool {
         BidiClass::L => true,
         _ => false,
     }
+}
+
+// Each row of a lookup table contains:
+// - A start, or only, character.
+// - An optional end character, defining an inclusive range.
+// - An optional replacement string.
+type TableEntry<'a> = (char, Option<char>, Option<&'a str>);
+
+// Try to find a character in a lookup table.
+fn table_lookup<'a>(table: &'a [TableEntry<'a>], c: char) -> Option<TableEntry<'a>> {
+    let mut low = 0;
+    let mut high = table.len();
+
+    // Binary search.
+    while low < high {
+        let middle = (low + high) / 2;
+        let entry = table[middle];
+        let (start, end, _) = entry;
+        if c == start {
+            return Some(entry);
+        }
+        if c < start {
+            high = middle;
+            continue;
+        }
+        if let Some(end) = end {
+            if c <= end {
+                return Some(entry);
+            }
+        }
+        low = middle + 1;
+    }
+
+    return None
 }
