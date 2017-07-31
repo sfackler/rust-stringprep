@@ -6,10 +6,15 @@ use super::rfc3454;
 
 /// A.1 Unassigned code points in Unicode 3.2
 pub fn unassigned_code_point(c: char) -> bool {
-    match table_lookup(rfc3454::A_1, c) {
-        Some(_) => true,
-        None => false,
-    }
+    rfc3454::A_1
+        .binary_search_by(|&(start, end)| if start > c {
+            Ordering::Greater
+        } else if end < c {
+            Ordering::Less
+        } else {
+            Ordering::Equal
+        })
+        .is_ok()
 }
 
 /// B.1 Commonly mapped to nothing
@@ -31,9 +36,9 @@ pub fn case_fold_for_nfkc(s: &str) -> String {
     // Each character either maps to a sequence of replacement characters,
     // or is passed through as-is.
     for c in s.chars() {
-        match table_lookup(rfc3454::B_2, c) {
-            Some((_, _, replace)) => result.push_str(replace),
-            None => result.push(c),
+        match rfc3454::B_2.binary_search_by_key(&c, |e| e.0) {
+            Ok(idx) => result.push_str(rfc3454::B_2[idx].1),
+            Err(_) => result.push(c),
         }
     }
 
@@ -180,23 +185,4 @@ pub fn bidi_l(c: char) -> bool {
         BidiClass::L => true,
         _ => false,
     }
-}
-
-// Each row of a lookup table contains:
-// - A start character.
-// - An end character, defining an inclusive range.
-// - A possibly empty replacement string.
-type TableEntry = (char, char, &'static str);
-
-// Try to find a character in a lookup table.
-fn table_lookup(table: &'static [TableEntry], c: char) -> Option<TableEntry> {
-    table
-        .binary_search_by(|&(start, end, _)| match start.cmp(&c) {
-            Ordering::Greater => Ordering::Greater,
-            Ordering::Equal => Ordering::Equal,
-            Ordering::Less if c <= end => Ordering::Equal,
-            Ordering::Less => Ordering::Less,
-        })
-        .ok()
-        .map(|i| table[i])
 }
