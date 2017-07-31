@@ -1,5 +1,6 @@
 //! Character Tables
 use unicode_bidi::{bidi_class, BidiClass};
+use std::cmp::Ordering;
 
 use super::rfc3454;
 
@@ -193,28 +194,17 @@ type TableEntry<'a> = (char, Option<char>, Option<&'a str>);
 
 // Try to find a character in a lookup table.
 fn table_lookup<'a>(table: &'a [TableEntry<'a>], c: char) -> Option<TableEntry<'a>> {
-    let mut low = 0;
-    let mut high = table.len();
-
-    // Binary search.
-    while low < high {
-        let middle = (low + high) / 2;
-        let entry = table[middle];
-        let (start, end, _) = entry;
-        if c == start {
-            return Some(entry);
-        }
-        if c < start {
-            high = middle;
-            continue;
-        }
-        if let Some(end) = end {
-            if c <= end {
-                return Some(entry);
+    table
+        .binary_search_by(|&(start, end, _)| match start.cmp(&c) {
+            Ordering::Greater => Ordering::Greater,
+            Ordering::Equal => Ordering::Equal,
+            Ordering::Less => {
+                match end {
+                    Some(end) if c <= end => Ordering::Equal,
+                    _ => Ordering::Less,
+                }
             }
-        }
-        low = middle + 1;
-    }
-
-    return None
+        })
+        .ok()
+        .map(|i| table[i])
 }
