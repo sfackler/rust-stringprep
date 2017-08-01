@@ -1,6 +1,7 @@
 //! Character Tables
 use unicode_bidi::{bidi_class, BidiClass};
 use std::cmp::Ordering;
+use std::str::Chars;
 
 use super::rfc3454;
 
@@ -30,19 +31,31 @@ pub fn commonly_mapped_to_nothing(c: char) -> bool {
 }
 
 /// B.2 Mapping for case-folding used with NFKC.
-pub fn case_fold_for_nfkc(s: &str) -> String {
-    let mut result = String::new();
+pub fn case_fold_for_nfkc(c: char) -> CaseFoldForNfkc {
+    let inner = match rfc3454::B_2.binary_search_by_key(&c, |e| e.0) {
+        Ok(idx) => FoldInner::Chars(rfc3454::B_2[idx].1.chars()),
+        Err(_) => FoldInner::Char(Some(c)),
+    };
+    CaseFoldForNfkc(inner)
+}
 
-    // Each character either maps to a sequence of replacement characters,
-    // or is passed through as-is.
-    for c in s.chars() {
-        match rfc3454::B_2.binary_search_by_key(&c, |e| e.0) {
-            Ok(idx) => result.push_str(rfc3454::B_2[idx].1),
-            Err(_) => result.push(c),
+enum FoldInner {
+    Chars(Chars<'static>),
+    Char(Option<char>),
+}
+
+/// The iterator returned by `case_fold_for_nfkc`.
+pub struct CaseFoldForNfkc(FoldInner);
+
+impl Iterator for CaseFoldForNfkc {
+    type Item = char;
+
+    fn next(&mut self) -> Option<char> {
+        match self.0 {
+            FoldInner::Chars(ref mut it) => it.next(),
+            FoldInner::Char(ref mut ch) => ch.take(),
         }
     }
-
-    result
 }
 
 /// C.1.1 ASCII space characters
