@@ -123,7 +123,11 @@ fn is_prohibited_bidirectional_text(s: &str) -> bool {
     false
 }
 
-/// [RFC 3419]: https://tools.ietf.org/html/rfc3419
+/// Prepares a string with the Nameprep profile of the stringprep algorithm.
+///
+/// Nameprep is defined in [RFC 3491][].
+///
+/// [RFC 3491]: https://tools.ietf.org/html/rfc3491
 pub fn nameprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
     // 3. Mapping
     let mapped = s.chars()
@@ -167,7 +171,11 @@ pub fn nameprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
     Ok(Cow::Owned(normalized))
 }
 
-/// [RFC 3920, Appendix A] https://tools.ietf.org/html/rfc3920#appendix-A
+/// Prepares a string with the Nodeprep profile of the stringprep algorithm.
+///
+/// Nameprep is defined in [RFC 3920, Appendix A][].
+///
+/// [RFC 3920, Appendix A]: https://tools.ietf.org/html/rfc3920#appendix-A
 pub fn nodeprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
     // A.3. Mapping
     let mapped = s.chars()
@@ -221,7 +229,11 @@ fn prohibited_node_character(c: char) -> bool {
     }
 }
 
-/// [RFC 3920, Appendix B] https://tools.ietf.org/html/rfc3920#appendix-B
+/// Prepares a string with the Resourceprep profile of the stringprep algorithm.
+///
+/// Nameprep is defined in [RFC 3920, Appendix B][].
+///
+/// [RFC 3920, Appendix B]: https://tools.ietf.org/html/rfc3920#appendix-B
 pub fn resourceprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
     // B.3. Mapping
     let mapped = s.chars()
