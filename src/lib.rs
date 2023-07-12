@@ -6,7 +6,6 @@
 extern crate unicode_bidi;
 extern crate unicode_normalization;
 
-use std::ascii::AsciiExt;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;

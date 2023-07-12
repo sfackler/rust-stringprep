@@ -76,7 +76,7 @@ pub fn non_ascii_space_character(c: char) -> bool {
 /// C.2.1 ASCII control characters
 pub fn ascii_control_character(c: char) -> bool {
     match c {
-        '\u{0000}'...'\u{001F}' |
+        '\u{0000}'..='\u{001F}' |
         '\u{007F}' => true,
         _ => false,
     }
@@ -85,7 +85,7 @@ pub fn ascii_control_character(c: char) -> bool {
 /// C.2.2 Non-ASCII control characters
 pub fn non_ascii_control_character(c: char) -> bool {
     match c {
-        '\u{0080}'...'\u{009F}' |
+        '\u{0080}'..='\u{009F}' |
         '\u{06DD}' |
         '\u{070F}' |
         '\u{180E}' |
@@ -97,10 +97,10 @@ pub fn non_ascii_control_character(c: char) -> bool {
         '\u{2061}' |
         '\u{2062}' |
         '\u{2063}' |
-        '\u{206A}'...'\u{206F}' |
+        '\u{206A}'..='\u{206F}' |
         '\u{FEFF}' |
-        '\u{FFF9}'...'\u{FFFC}' |
-        '\u{1D173}'...'\u{1D17A}' => true,
+        '\u{FFF9}'..='\u{FFFC}' |
+        '\u{1D173}'..='\u{1D17A}' => true,
         _ => false,
     }
 }
@@ -108,9 +108,9 @@ pub fn non_ascii_control_character(c: char) -> bool {
 /// C.3 Private use
 pub fn private_use(c: char) -> bool {
     match c {
-        '\u{E000}'...'\u{F8FF}' |
-        '\u{F0000}'...'\u{FFFFD}' |
-        '\u{100000}'...'\u{10FFFD}' => true,
+        '\u{E000}'..='\u{F8FF}' |
+        '\u{F0000}'..='\u{FFFFD}' |
+        '\u{100000}'..='\u{10FFFD}' => true,
         _ => false,
     }
 }
@@ -118,24 +118,24 @@ pub fn private_use(c: char) -> bool {
 /// C.4 Non-character code points
 pub fn non_character_code_point(c: char) -> bool {
     match c {
-        '\u{FDD0}'...'\u{FDEF}' |
-        '\u{FFFE}'...'\u{FFFF}' |
-        '\u{1FFFE}'...'\u{1FFFF}' |
-        '\u{2FFFE}'...'\u{2FFFF}' |
-        '\u{3FFFE}'...'\u{3FFFF}' |
-        '\u{4FFFE}'...'\u{4FFFF}' |
-        '\u{5FFFE}'...'\u{5FFFF}' |
-        '\u{6FFFE}'...'\u{6FFFF}' |
-        '\u{7FFFE}'...'\u{7FFFF}' |
-        '\u{8FFFE}'...'\u{8FFFF}' |
-        '\u{9FFFE}'...'\u{9FFFF}' |
-        '\u{AFFFE}'...'\u{AFFFF}' |
-        '\u{BFFFE}'...'\u{BFFFF}' |
-        '\u{CFFFE}'...'\u{CFFFF}' |
-        '\u{DFFFE}'...'\u{DFFFF}' |
-        '\u{EFFFE}'...'\u{EFFFF}' |
-        '\u{FFFFE}'...'\u{FFFFF}' |
-        '\u{10FFFE}'...'\u{10FFFF}' => true,
+        '\u{FDD0}'..='\u{FDEF}' |
+        '\u{FFFE}'..='\u{FFFF}' |
+        '\u{1FFFE}'..='\u{1FFFF}' |
+        '\u{2FFFE}'..='\u{2FFFF}' |
+        '\u{3FFFE}'..='\u{3FFFF}' |
+        '\u{4FFFE}'..='\u{4FFFF}' |
+        '\u{5FFFE}'..='\u{5FFFF}' |
+        '\u{6FFFE}'..='\u{6FFFF}' |
+        '\u{7FFFE}'..='\u{7FFFF}' |
+        '\u{8FFFE}'..='\u{8FFFF}' |
+        '\u{9FFFE}'..='\u{9FFFF}' |
+        '\u{AFFFE}'..='\u{AFFFF}' |
+        '\u{BFFFE}'..='\u{BFFFF}' |
+        '\u{CFFFE}'..='\u{CFFFF}' |
+        '\u{DFFFE}'..='\u{DFFFF}' |
+        '\u{EFFFE}'..='\u{EFFFF}' |
+        '\u{FFFFE}'..='\u{FFFFF}' |
+        '\u{10FFFE}'..='\u{10FFFF}' => true,
         _ => false,
     }
 }
@@ -144,7 +144,7 @@ pub fn non_character_code_point(c: char) -> bool {
 pub fn surrogate_code(c: char) -> bool {
     match c {
         // forbidden by rust
-        /*'\u{D800}'...'\u{DFFF}' => true,*/
+        /*'\u{D800}'..='\u{DFFF}' => true,*/
         _ => false,
     }
 }
@@ -160,7 +160,7 @@ pub fn inappropriate_for_plain_text(c: char) -> bool {
 /// C.7 Inappropriate for canonical representation
 pub fn inappropriate_for_canonical_representation(c: char) -> bool {
     match c {
-        '\u{2FF0}'...'\u{2FFB}' => true,
+        '\u{2FF0}'..='\u{2FFB}' => true,
         _ => false,
     }
 }
@@ -179,7 +179,7 @@ pub fn change_display_properties_or_deprecated(c: char) -> bool {
 pub fn tagging_character(c: char) -> bool {
     match c {
         '\u{E0001}' |
-        '\u{E0020}'...'\u{E007F}' => true,
+        '\u{E0020}'..='\u{E007F}' => true,
         _ => false,
     }
 }
