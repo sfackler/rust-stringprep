@@ -95,7 +95,7 @@ fn should_case_fold_and_normalize() {
 fn should_revert_case_fold_and_normalization() {
     let inputs = ["\u{01f0}", "\u{0390}", "\u{03b0}", "\u{1e96}", "\u{1f56}"];
     for input in inputs.iter() {
-        assert_eq!(input.clone(), nameprep(input).unwrap());
+        assert_eq!(*input, nameprep(input).unwrap());
     }
 }
 
