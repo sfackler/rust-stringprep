@@ -47,7 +47,7 @@ impl error::Error for Error {
 /// SASLprep is defined in [RFC 4013][].
 ///
 /// [RFC 4013]: https://tools.ietf.org/html/rfc4013
-pub fn saslprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
+pub fn saslprep(s: &str) -> Result<Cow<'_, str>, Error> {
     // fast path for ascii text
     if s.chars()
            .all(|c| c.is_ascii() && !tables::ascii_control_character(c)) {
@@ -127,7 +127,7 @@ fn is_prohibited_bidirectional_text(s: &str) -> bool {
 /// Nameprep is defined in [RFC 3491][].
 ///
 /// [RFC 3491]: https://tools.ietf.org/html/rfc3491
-pub fn nameprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
+pub fn nameprep(s: &str) -> Result<Cow<'_, str>, Error> {
     // 3. Mapping
     let mapped = s.chars()
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
@@ -175,7 +175,7 @@ pub fn nameprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
 /// Nameprep is defined in [RFC 3920, Appendix A][].
 ///
 /// [RFC 3920, Appendix A]: https://tools.ietf.org/html/rfc3920#appendix-A
-pub fn nodeprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
+pub fn nodeprep(s: &str) -> Result<Cow<'_, str>, Error> {
     // A.3. Mapping
     let mapped = s.chars()
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
@@ -233,7 +233,7 @@ fn prohibited_node_character(c: char) -> bool {
 /// Nameprep is defined in [RFC 3920, Appendix B][].
 ///
 /// [RFC 3920, Appendix B]: https://tools.ietf.org/html/rfc3920#appendix-B
-pub fn resourceprep<'a>(s: &'a str) -> Result<Cow<'a, str>, Error> {
+pub fn resourceprep(s: &str) -> Result<Cow<'_, str>, Error> {
     // B.3. Mapping
     let mapped = s.chars()
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
