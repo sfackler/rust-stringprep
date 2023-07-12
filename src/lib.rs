@@ -45,7 +45,8 @@ impl std::error::Error for Error {}
 pub fn saslprep(s: &str) -> Result<Cow<'_, str>, Error> {
     // fast path for ascii text
     if s.chars()
-           .all(|c| c.is_ascii() && !tables::ascii_control_character(c)) {
+        .all(|c| c.is_ascii() && !tables::ascii_control_character(c))
+    {
         return Ok(Cow::Borrowed(s));
     }
 
@@ -123,6 +124,13 @@ fn is_prohibited_bidirectional_text(s: &str) -> bool {
 ///
 /// [RFC 3491]: https://tools.ietf.org/html/rfc3491
 pub fn nameprep(s: &str) -> Result<Cow<'_, str>, Error> {
+    // fast path for ascii text
+    if s.chars()
+        .all(|c| c.is_ascii_lowercase() && !tables::ascii_control_character(c))
+    {
+        return Ok(Cow::Borrowed(s));
+    }
+
     // 3. Mapping
     let mapped = s.chars()
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
@@ -171,6 +179,15 @@ pub fn nameprep(s: &str) -> Result<Cow<'_, str>, Error> {
 ///
 /// [RFC 3920, Appendix A]: https://tools.ietf.org/html/rfc3920#appendix-A
 pub fn nodeprep(s: &str) -> Result<Cow<'_, str>, Error> {
+    // fast path for ascii text
+    if s.chars().all(|c| {
+        c.is_ascii_lowercase()
+            && !tables::ascii_control_character(c)
+            && !prohibited_node_character(c)
+    }) {
+        return Ok(Cow::Borrowed(s));
+    }
+
     // A.3. Mapping
     let mapped = s.chars()
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
@@ -229,6 +246,13 @@ fn prohibited_node_character(c: char) -> bool {
 ///
 /// [RFC 3920, Appendix B]: https://tools.ietf.org/html/rfc3920#appendix-B
 pub fn resourceprep(s: &str) -> Result<Cow<'_, str>, Error> {
+    // fast path for ascii text
+    if s.chars()
+        .all(|c| c.is_ascii() && !tables::ascii_control_character(c))
+    {
+        return Ok(Cow::Borrowed(s));
+    }
+
     // B.3. Mapping
     let mapped = s.chars()
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
