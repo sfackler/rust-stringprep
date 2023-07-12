@@ -7,7 +7,6 @@ extern crate unicode_bidi;
 extern crate unicode_normalization;
 
 use std::borrow::Cow;
-use std::error;
 use std::fmt;
 use unicode_normalization::UnicodeNormalization;
 
@@ -36,11 +35,7 @@ impl fmt::Display for Error {
     }
 }
 
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        "error performing stringprep algorithm"
-    }
-}
+impl std::error::Error for Error {}
 
 /// Prepares a string with the SASLprep profile of the stringprep algorithm.
 ///
