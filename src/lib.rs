@@ -126,7 +126,7 @@ fn is_prohibited_bidirectional_text(s: &str) -> bool {
 pub fn nameprep(s: &str) -> Result<Cow<'_, str>, Error> {
     // fast path for ascii text
     if s.chars()
-        .all(|c| c.is_ascii_lowercase() && !tables::ascii_control_character(c))
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '.' || c == '-')
     {
         return Ok(Cow::Borrowed(s));
     }
@@ -322,5 +322,18 @@ mod test {
     #[test]
     fn resourceprep_examples() {
         assert_eq!("foo@bar", resourceprep("foo@bar").unwrap());
+    }
+
+    #[test]
+    fn ascii_optimisations() {
+        if let Cow::Owned(_) = nodeprep("nodepart").unwrap() {
+            panic!("“nodepart” should get optimised as ASCII");
+        }
+        if let Cow::Owned(_) = nameprep("domainpart.example").unwrap() {
+            panic!("“domainpart.example” should get optimised as ASCII");
+        }
+        if let Cow::Owned(_) = resourceprep("resourcepart").unwrap() {
+            panic!("“resourcepart” should get optimised as ASCII");
+        }
     }
 }
