@@ -179,12 +179,10 @@ pub fn nameprep(s: &str) -> Result<Cow<'_, str>, Error> {
 ///
 /// [RFC 3920, Appendix A]: https://tools.ietf.org/html/rfc3920#appendix-A
 pub fn nodeprep(s: &str) -> Result<Cow<'_, str>, Error> {
-    // fast path for ascii text
-    if s.chars().all(|c| {
-        c.is_ascii_lowercase()
-            && !tables::ascii_control_character(c)
-            && !prohibited_node_character(c)
-    }) {
+    // fast path for common ascii text
+    if s.chars()
+        .all(|c| matches!(c, '['..='~' | '0'..='9' | '('..='.' | '#'..='%'))
+    {
         return Ok(Cow::Borrowed(s));
     }
 
