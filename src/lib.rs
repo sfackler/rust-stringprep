@@ -246,7 +246,7 @@ fn prohibited_node_character(c: char) -> bool {
 pub fn resourceprep(s: &str) -> Result<Cow<'_, str>, Error> {
     // fast path for ascii text
     if s.chars()
-        .all(|c| c.is_ascii() && !tables::ascii_control_character(c))
+        .all(|c| matches!(c, ' '..='~'))
     {
         return Ok(Cow::Borrowed(s));
     }
