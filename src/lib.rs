@@ -126,7 +126,7 @@ fn is_prohibited_bidirectional_text(s: &str) -> bool {
 pub fn nameprep(s: &str) -> Result<Cow<'_, str>, Error> {
     // fast path for ascii text
     if s.chars()
-        .all(|c| c.is_ascii_lowercase() && !tables::ascii_control_character(c))
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '.' || c == '-')
     {
         return Ok(Cow::Borrowed(s));
     }
@@ -179,12 +179,10 @@ pub fn nameprep(s: &str) -> Result<Cow<'_, str>, Error> {
 ///
 /// [RFC 3920, Appendix A]: https://tools.ietf.org/html/rfc3920#appendix-A
 pub fn nodeprep(s: &str) -> Result<Cow<'_, str>, Error> {
-    // fast path for ascii text
-    if s.chars().all(|c| {
-        c.is_ascii_lowercase()
-            && !tables::ascii_control_character(c)
-            && !prohibited_node_character(c)
-    }) {
+    // fast path for common ascii text
+    if s.chars()
+        .all(|c| matches!(c, '['..='~' | '0'..='9' | '('..='.' | '#'..='%'))
+    {
         return Ok(Cow::Borrowed(s));
     }
 
@@ -248,7 +246,7 @@ fn prohibited_node_character(c: char) -> bool {
 pub fn resourceprep(s: &str) -> Result<Cow<'_, str>, Error> {
     // fast path for ascii text
     if s.chars()
-        .all(|c| c.is_ascii() && !tables::ascii_control_character(c))
+        .all(|c| matches!(c, ' '..='~'))
     {
         return Ok(Cow::Borrowed(s));
     }
@@ -322,5 +320,18 @@ mod test {
     #[test]
     fn resourceprep_examples() {
         assert_eq!("foo@bar", resourceprep("foo@bar").unwrap());
+    }
+
+    #[test]
+    fn ascii_optimisations() {
+        if let Cow::Owned(_) = nodeprep("nodepart").unwrap() {
+            panic!("“nodepart” should get optimised as ASCII");
+        }
+        if let Cow::Owned(_) = nameprep("domainpart.example").unwrap() {
+            panic!("“domainpart.example” should get optimised as ASCII");
+        }
+        if let Cow::Owned(_) = resourceprep("resourcepart").unwrap() {
+            panic!("“resourcepart” should get optimised as ASCII");
+        }
     }
 }
