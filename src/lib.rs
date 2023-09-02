@@ -345,10 +345,12 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
     // From ITU-T Recommendation X.520, Section 7.4:
     // "The first code point of a string is prohibited from being a combining character."
     let first_char = s.chars().next();
-    if first_char.is_some_and(|c| tables::unicode_mark_category(c)) {
-        // I do think this ought to be considered a different error, but adding
-        // another enum variant would be a breaking change, so this is "good"
-        return Err(Error(ErrorCause::ProhibitedCharacter(first_char.unwrap())));
+    if let Some(c) = first_char {
+        if tables::unicode_mark_category(c) {
+            // I do think this ought to be considered a different error, but adding
+            // another enum variant would be a breaking change, so this is "good"
+            return Err(Error(ErrorCause::ProhibitedCharacter(first_char.unwrap())));
+        }
     }
 
     // 5. Check bidi
