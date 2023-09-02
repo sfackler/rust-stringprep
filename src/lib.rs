@@ -311,7 +311,7 @@ fn x520_mapped_to_nothing(c: char) -> bool {
 /// spaces as described in Section 7.6, because the characters needing removal
 /// will vary across the matching rules and ASN.1 syntaxes used.
 pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
-    if s.chars().all(|c| matches!(c, ' '..='~')) {
+    if s.chars().all(|c| matches!(c, ' '..='~') && (!case_fold || c.is_ascii_lowercase())) {
         return Ok(Cow::Borrowed(s));
     }
 
@@ -399,6 +399,7 @@ mod test {
         assert_eq!(x520prep("foo@bar", true).unwrap(), "foo@bar");
         assert_eq!(x520prep("J.\u{FE00} \u{9}W.\u{9} \u{B}wuz h\u{0115}re", false).unwrap(), "J. W. wuz h\u{0115}re");
         assert_eq!(x520prep("J.\u{FE00} \u{9}W.\u{9} \u{B}wuz h\u{0115}re", true).unwrap(), "j. w. wuz h\u{0115}re");
+        assert_eq!(x520prep("UPPERCASED", true).unwrap(), "uppercased");
         assert_prohibited_character(x520prep("\u{0306}hello", true));
     }
 
