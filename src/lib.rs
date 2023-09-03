@@ -295,14 +295,24 @@ pub fn resourceprep(s: &str) -> Result<Cow<'_, str>, Error> {
     Ok(Cow::Owned(normalized))
 }
 
+/// Determines if `c` is to be removed according to section 7.2 of
+/// [ITU-T Recommendation X.520 (2019)](https://www.itu.int/rec/T-REC-X.520-201910-I/en).
 fn x520_mapped_to_nothing(c: char) -> bool {
-    if c.is_control() {
-        return true;
-    }
     match c {
         '\u{00AD}' | '\u{1806}' | '\u{034F}' | '\u{180B}'..='\u{180D}' |
         '\u{FE00}'..='\u{FE0F}' | '\u{FFFC}' | '\u{200B}' => true,
-        _ => false,
+        // Technically control characters, but mapped to whitespace in X.520.
+        '\u{09}' | '\u{0A}'..='\u{0D}' | '\u{85}' => false,
+        _ => c.is_control(),
+    }
+}
+
+/// Determines if `c` is to be replaced by SPACE (0x20) according to section 7.2 of
+/// [ITU-T Recommendation X.520 (2019)](https://www.itu.int/rec/T-REC-X.520-201910-I/en).
+fn x520_mapped_to_space(c: char) -> bool {
+    match c {
+        '\u{09}' | '\u{0A}'..='\u{0D}' | '\u{85}' => true,
+        _ => c.is_separator(),
     }
 }
 
@@ -323,7 +333,7 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
     // 2. Map
     let mapped = s.chars()
         .filter(|&c| !x520_mapped_to_nothing(c))
-        .map(|c| if c.is_separator() { ' ' } else { c });
+        .map(|c| if x520_mapped_to_space(c) { ' ' } else { c });
 
     // 3. Normalize
     let normalized = if case_fold {
@@ -399,8 +409,8 @@ mod test {
     fn x520prep_examples() {
         assert_eq!(x520prep("", true).unwrap(), "");
         assert_eq!(x520prep("foo@bar", true).unwrap(), "foo@bar");
-        assert_eq!(x520prep("J.\u{FE00} \u{9}W.\u{9} \u{B}wuz h\u{0115}re", false).unwrap(), "J. W. wuz h\u{0115}re");
-        assert_eq!(x520prep("J.\u{FE00} \u{9}W.\u{9} \u{B}wuz h\u{0115}re", true).unwrap(), "j. w. wuz h\u{0115}re");
+        assert_eq!(x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", false).unwrap(), "J.  W.  wuz h\u{0115}re");
+        assert_eq!(x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", true).unwrap(), "j.  w.  wuz h\u{0115}re");
         assert_eq!(x520prep("UPPERCASED", true).unwrap(), "uppercased");
         assert_prohibited_character(x520prep("\u{0306}hello", true));
     }
