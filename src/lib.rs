@@ -331,7 +331,7 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
             .flat_map(tables::case_fold_for_nfkc)
             .collect::<String>()
     } else {
-        mapped.collect::<String>()
+        mapped.nfkc().collect::<String>()
     };
 
     // 4. Prohibit
