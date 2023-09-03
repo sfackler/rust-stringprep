@@ -5,9 +5,11 @@
 #![warn(missing_docs)]
 extern crate unicode_bidi;
 extern crate unicode_normalization;
+extern crate finl_unicode;
 
 use std::borrow::Cow;
 use std::fmt;
+use finl_unicode::categories::CharacterCategories;
 use unicode_normalization::UnicodeNormalization;
 
 mod rfc3454;
@@ -321,7 +323,7 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
     // 2. Map
     let mapped = s.chars()
         .filter(|&c| !x520_mapped_to_nothing(c))
-        .map(|c| if c.is_whitespace() { ' ' } else { c });
+        .map(|c| if c.is_separator() { ' ' } else { c });
 
     // 3. Normalize
     let normalized = if case_fold {
@@ -346,7 +348,7 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
     // "The first code point of a string is prohibited from being a combining character."
     let first_char = s.chars().next();
     if let Some(c) = first_char {
-        if tables::unicode_mark_category(c) {
+        if c.is_mark() {
             // I do think this ought to be considered a different error, but adding
             // another enum variant would be a breaking change, so this is "good"
             return Err(Error(ErrorCause::ProhibitedCharacter(first_char.unwrap())));
