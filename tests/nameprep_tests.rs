@@ -1,7 +1,7 @@
 // Integration tests from https://tools.ietf.org/html/draft-josefsson-idn-test-vectors-00
 extern crate stringprep;
 
-use stringprep::{Error, nameprep};
+use stringprep::{nameprep, Error};
 
 fn assert_prohibited_character<T>(result: Result<T, Error>) {
     assert!(result.is_err());
@@ -14,25 +14,47 @@ fn assert_prohibited_bidirectional_text<T>(result: Result<T, Error>) {
 // Additional examples from http://josefsson.org/idn.php
 #[test]
 fn test_nameprep() {
-    assert_eq!("安室奈美恵-with-super-monkeys", nameprep("安室奈美恵-with-SUPER-MONKEYS").unwrap());
-    assert_eq!("미술", nameprep("미술").unwrap());                                                       // Korean
-    assert_eq!("ليهمابتكلموشعربي؟", nameprep("ليهمابتكلموشعربي؟").unwrap());                             // Egyptian
-    assert_eq!("他们为什么不说中文", nameprep("他们为什么不说中文").unwrap());                           // Chinese
-    assert_eq!("למההםפשוטלאמדבריםעברית", nameprep("למההםפשוטלאמדבריםעברית").unwrap());                   // Hebrew
-    assert_eq!("почемужеонинеговорятпорусски", nameprep("почемужеонинеговорятпорусски").unwrap());       // Russian
-    assert_eq!("tạisaohọkhôngthểchỉnóitiếngviệt", nameprep("TạisaohọkhôngthểchỉnóitiếngViệt").unwrap()); // Vietnamese
-    assert_eq!("ひとつ屋根の下2", nameprep("ひとつ屋根の下2").unwrap());                                 // Japanese
-    assert_eq!("pročprostěnemluvíčesky", nameprep("Pročprostěnemluvíčesky").unwrap());                   // Czech
-    assert_eq!("यहलोगहिन्दीक्योंनहींबोलसकतेहैं", nameprep("यहलोगहिन्दीक्योंनहींबोलसकतेहैं").unwrap());             // Hindi
-    assert_eq!("ພາສາລາວ", nameprep("ພາສາລາວ").unwrap());                                                 // Lao
-    assert_eq!("bonġusaħħa", nameprep("bonġusaħħa").unwrap());                                           // Maltese
-    assert_eq!("ελληνικά", nameprep("ελληνικά").unwrap());                                               // Greek
+    assert_eq!(
+        "安室奈美恵-with-super-monkeys",
+        nameprep("安室奈美恵-with-SUPER-MONKEYS").unwrap()
+    );
+    assert_eq!("미술", nameprep("미술").unwrap()); // Korean
+    assert_eq!("ليهمابتكلموشعربي؟", nameprep("ليهمابتكلموشعربي؟").unwrap()); // Egyptian
+    assert_eq!(
+        "他们为什么不说中文",
+        nameprep("他们为什么不说中文").unwrap()
+    ); // Chinese
+    assert_eq!(
+        "למההםפשוטלאמדבריםעברית",
+        nameprep("למההםפשוטלאמדבריםעברית").unwrap()
+    ); // Hebrew
+    assert_eq!(
+        "почемужеонинеговорятпорусски",
+        nameprep("почемужеонинеговорятпорусски").unwrap()
+    ); // Russian
+    assert_eq!(
+        "tạisaohọkhôngthểchỉnóitiếngviệt",
+        nameprep("TạisaohọkhôngthểchỉnóitiếngViệt").unwrap()
+    ); // Vietnamese
+    assert_eq!("ひとつ屋根の下2", nameprep("ひとつ屋根の下2").unwrap()); // Japanese
+    assert_eq!(
+        "pročprostěnemluvíčesky",
+        nameprep("Pročprostěnemluvíčesky").unwrap()
+    ); // Czech
+    assert_eq!(
+        "यहलोगहिन्दीक्योंनहींबोलसकतेहैं",
+        nameprep("यहलोगहिन्दीक्योंनहींबोलसकतेहैं").unwrap()
+    ); // Hindi
+    assert_eq!("ພາສາລາວ", nameprep("ພາສາລາວ").unwrap()); // Lao
+    assert_eq!("bonġusaħħa", nameprep("bonġusaħħa").unwrap()); // Maltese
+    assert_eq!("ελληνικά", nameprep("ελληνικά").unwrap()); // Greek
 }
 
 // 4.1 Map to nothing
 #[test]
 fn should_map_to_nothing() {
-    let input = "foo\u{00ad}\u{034f}\u{1806}\u{180b}bar\u{200b}\u{2060}baz\u{fe00}\u{fe08}\u{fe0f}\u{feff}";
+    let input =
+        "foo\u{00ad}\u{034f}\u{1806}\u{180b}bar\u{200b}\u{2060}baz\u{fe00}\u{fe08}\u{fe0f}\u{feff}";
     assert_eq!("foobarbaz", nameprep(input).unwrap());
 }
 
@@ -264,7 +286,10 @@ fn should_prohibit_mixed_randalcat() {
 // 4.42 Bidi: RandALCat character U+0627 U+0031 U+0628
 #[test]
 fn should_permit_randalcat2() {
-    assert_eq!("\u{0627}\u{0031}\u{0628}", nameprep("\u{0627}\u{0031}\u{0628}").unwrap());
+    assert_eq!(
+        "\u{0627}\u{0031}\u{0628}",
+        nameprep("\u{0627}\u{0031}\u{0628}").unwrap()
+    );
 }
 
 // 4.43 Unassigned code point U+E0002

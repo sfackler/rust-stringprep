@@ -5,5 +5,8 @@ use stringprep::nodeprep;
 
 #[test]
 fn test_nodeprep() {
-    assert_eq!("räksmörgås.josefsson.org", nodeprep("räksmörgås.josefßon.org").unwrap());
+    assert_eq!(
+        "räksmörgås.josefsson.org",
+        nodeprep("räksmörgås.josefßon.org").unwrap()
+    );
 }

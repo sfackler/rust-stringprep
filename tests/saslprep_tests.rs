@@ -1,7 +1,7 @@
 // Integration tests from https://github.com/reklatsmasters/saslprep (MIT License)
 extern crate stringprep;
 
-use stringprep::{Error, saslprep};
+use stringprep::{saslprep, Error};
 
 fn assert_prohibited_character<T>(result: Result<T, Error>) {
     assert!(result.is_err());
@@ -69,7 +69,10 @@ fn should_not_allow_prohibited_characters() {
 
 #[test]
 fn randalcat_should_be_first_and_last() {
-    assert_eq!(saslprep("\u{0627}\u{0031}\u{0628}").unwrap(), "\u{0627}\u{0031}\u{0628}");
+    assert_eq!(
+        saslprep("\u{0627}\u{0031}\u{0628}").unwrap(),
+        "\u{0627}\u{0031}\u{0628}"
+    );
     assert_prohibited_bidirectional_text(saslprep("\u{0627}\u{0031}"));
 }
 
