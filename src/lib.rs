@@ -22,6 +22,10 @@ enum ErrorCause {
     ProhibitedCharacter(char),
     /// Violates stringprep rules for bidirectional text.
     ProhibitedBidirectionalText,
+    /// Starts with a combining character
+    StartsWithCombiningCharacter,
+    /// Empty String
+    EmptyString,
 }
 
 /// An error performing the stringprep algorithm.
@@ -33,6 +37,8 @@ impl fmt::Display for Error {
         match self.0 {
             ErrorCause::ProhibitedCharacter(c) => write!(fmt, "prohibited character `{}`", c),
             ErrorCause::ProhibitedBidirectionalText => write!(fmt, "prohibited bidirectional text"),
+            ErrorCause::StartsWithCombiningCharacter => write!(fmt, "starts with combining character"),
+            ErrorCause::EmptyString => write!(fmt, "empty string"),
         }
     }
 }
@@ -323,6 +329,9 @@ fn x520_mapped_to_space(c: char) -> bool {
 /// spaces as described in Section 7.6, because the characters needing removal
 /// will vary across the matching rules and ASN.1 syntaxes used.
 pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
+    if s.len() == 0 {
+        return Err(Error(ErrorCause::EmptyString));
+    }
     if s.chars().all(|c| matches!(c, ' '..='~') && (!case_fold || c.is_ascii_lowercase())) {
         return Ok(Cow::Borrowed(s));
     }
@@ -359,10 +368,10 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
     let first_char = s.chars().next();
     if let Some(c) = first_char {
         if c.is_mark() {
-            // I do think this ought to be considered a different error, but adding
-            // another enum variant would be a breaking change, so this is "good"
-            return Err(Error(ErrorCause::ProhibitedCharacter(first_char.unwrap())));
+            return Err(Error(ErrorCause::StartsWithCombiningCharacter));
         }
+    } else {
+        return Err(Error(ErrorCause::EmptyString));
     }
 
     // 5. Check bidi
