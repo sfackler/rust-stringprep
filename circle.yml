@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/build
     docker:
-      - image: rust:1.47.0
+      - image: rust:1.56.0 # 1.56.0 = Rust 2021.
     steps:
       - checkout
       - restore_cache:
