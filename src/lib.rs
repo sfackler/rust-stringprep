@@ -5,9 +5,11 @@
 #![warn(missing_docs)]
 extern crate unicode_bidi;
 extern crate unicode_normalization;
+extern crate finl_unicode;
 
 use std::borrow::Cow;
 use std::fmt;
+use finl_unicode::categories::CharacterCategories;
 use unicode_normalization::UnicodeNormalization;
 
 mod rfc3454;
@@ -20,6 +22,10 @@ enum ErrorCause {
     ProhibitedCharacter(char),
     /// Violates stringprep rules for bidirectional text.
     ProhibitedBidirectionalText,
+    /// Starts with a combining character
+    StartsWithCombiningCharacter,
+    /// Empty String
+    EmptyString,
 }
 
 /// An error performing the stringprep algorithm.
@@ -31,6 +37,8 @@ impl fmt::Display for Error {
         match self.0 {
             ErrorCause::ProhibitedCharacter(c) => write!(fmt, "prohibited character `{}`", c),
             ErrorCause::ProhibitedBidirectionalText => write!(fmt, "prohibited bidirectional text"),
+            ErrorCause::StartsWithCombiningCharacter => write!(fmt, "starts with combining character"),
+            ErrorCause::EmptyString => write!(fmt, "empty string"),
         }
     }
 }
@@ -293,6 +301,90 @@ pub fn resourceprep(s: &str) -> Result<Cow<'_, str>, Error> {
     Ok(Cow::Owned(normalized))
 }
 
+/// Determines if `c` is to be removed according to section 7.2 of
+/// [ITU-T Recommendation X.520 (2019)](https://www.itu.int/rec/T-REC-X.520-201910-I/en).
+fn x520_mapped_to_nothing(c: char) -> bool {
+    match c {
+        '\u{00AD}' | '\u{1806}' | '\u{034F}' | '\u{180B}'..='\u{180D}' |
+        '\u{FE00}'..='\u{FE0F}' | '\u{FFFC}' | '\u{200B}' => true,
+        // Technically control characters, but mapped to whitespace in X.520.
+        '\u{09}' | '\u{0A}'..='\u{0D}' | '\u{85}' => false,
+        _ => c.is_control(),
+    }
+}
+
+/// Determines if `c` is to be replaced by SPACE (0x20) according to section 7.2 of
+/// [ITU-T Recommendation X.520 (2019)](https://www.itu.int/rec/T-REC-X.520-201910-I/en).
+fn x520_mapped_to_space(c: char) -> bool {
+    match c {
+        '\u{09}' | '\u{0A}'..='\u{0D}' | '\u{85}' => true,
+        _ => c.is_separator(),
+    }
+}
+
+/// Prepares a string according to the procedures described in Section 7 of
+/// [ITU-T Recommendation X.520 (2019)](https://www.itu.int/rec/T-REC-X.520-201910-I/en).
+///
+/// Note that this function does _not_ remove leading, trailing, or inner
+/// spaces as described in Section 7.6, because the characters needing removal
+/// will vary across the matching rules and ASN.1 syntaxes used.
+pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
+    if s.len() == 0 {
+        return Err(Error(ErrorCause::EmptyString));
+    }
+    if s.chars().all(|c| matches!(c, ' '..='~') && (!case_fold || c.is_ascii_lowercase())) {
+        return Ok(Cow::Borrowed(s));
+    }
+
+    // 1. Transcode
+    // Already done because &str is enforced to be Unicode.
+
+    // 2. Map
+    let mapped = s.chars()
+        .filter(|&c| !x520_mapped_to_nothing(c))
+        .map(|c| if x520_mapped_to_space(c) { ' ' } else { c });
+
+    // 3. Normalize
+    let normalized = if case_fold {
+        mapped
+            .flat_map(tables::case_fold_for_nfkc)
+            .collect::<String>()
+    } else {
+        mapped.nfkc().collect::<String>()
+    };
+
+    // 4. Prohibit
+    let prohibited = normalized.chars().find(|&c| tables::unassigned_code_point(c)
+        || tables::private_use(c)
+        || tables::non_character_code_point(c)
+        || tables::surrogate_code(c)
+        || c == '\u{FFFD}' // REPLACEMENT CHARACTER
+    );
+    if let Some(c) = prohibited {
+        return Err(Error(ErrorCause::ProhibitedCharacter(c)));
+    }
+    // From ITU-T Recommendation X.520, Section 7.4:
+    // "The first code point of a string is prohibited from being a combining character."
+    let first_char = s.chars().next();
+    if let Some(c) = first_char {
+        if c.is_mark() {
+            return Err(Error(ErrorCause::StartsWithCombiningCharacter));
+        }
+    } else {
+        return Err(Error(ErrorCause::EmptyString));
+    }
+
+    // 5. Check bidi
+    // From ITU-T Recommendation X.520, Section 7.4:
+    // "There are no bidirectional restrictions. The output string is the input string."
+    // So there is nothing to do for this step.
+
+    // 6. Insignificant Character Removal
+    // Done in calling functions.
+
+    Ok(normalized.into())
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -300,6 +392,13 @@ mod test {
 	fn assert_prohibited_character<T>(result: Result<T, Error>) {
 		match result {
 			Err(Error(ErrorCause::ProhibitedCharacter(_))) => (),
+			_ => assert!(false)
+		}
+	}
+
+    fn assert_starts_with_combining_char<T>(result: Result<T, Error>) {
+		match result {
+			Err(Error(ErrorCause::StartsWithCombiningCharacter)) => (),
 			_ => assert!(false)
 		}
 	}
@@ -320,6 +419,15 @@ mod test {
     #[test]
     fn resourceprep_examples() {
         assert_eq!("foo@bar", resourceprep("foo@bar").unwrap());
+    }
+
+    #[test]
+    fn x520prep_examples() {
+        assert_eq!(x520prep("foo@bar", true).unwrap(), "foo@bar");
+        assert_eq!(x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", false).unwrap(), "J.  W.  wuz h\u{0115}re");
+        assert_eq!(x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", true).unwrap(), "j.  w.  wuz h\u{0115}re");
+        assert_eq!(x520prep("UPPERCASED", true).unwrap(), "uppercased");
+        assert_starts_with_combining_char(x520prep("\u{0306}hello", true));
     }
 
     #[test]
