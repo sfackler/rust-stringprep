@@ -1,7 +1,5 @@
 # stringprep
 
-[![CircleCI](https://circleci.com/gh/sfackler/rust-stringprep.svg?style=shield)](https://circleci.com/gh/sfackler/rust-stringprep)
-
 [Documentation](https://docs.rs/stringprep)
 
 An implementation of the stringprep algorithm as defined in [RFC 3454][].
