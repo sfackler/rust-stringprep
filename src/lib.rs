@@ -396,6 +396,13 @@ mod test {
 		}
 	}
 
+    fn assert_starts_with_combining_char<T>(result: Result<T, Error>) {
+		match result {
+			Err(Error(ErrorCause::StartsWithCombiningCharacter)) => (),
+			_ => assert!(false)
+		}
+	}
+
     // RFC4013, 3. Examples
     #[test]
     fn saslprep_examples() {
@@ -420,7 +427,7 @@ mod test {
         assert_eq!(x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", false).unwrap(), "J.  W.  wuz h\u{0115}re");
         assert_eq!(x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", true).unwrap(), "j.  w.  wuz h\u{0115}re");
         assert_eq!(x520prep("UPPERCASED", true).unwrap(), "uppercased");
-        assert_prohibited_character(x520prep("\u{0306}hello", true));
+        assert_starts_with_combining_char(x520prep("\u{0306}hello", true));
     }
 
     #[test]
