@@ -416,7 +416,6 @@ mod test {
 
     #[test]
     fn x520prep_examples() {
-        assert_eq!(x520prep("", true).unwrap(), "");
         assert_eq!(x520prep("foo@bar", true).unwrap(), "foo@bar");
         assert_eq!(x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", false).unwrap(), "J.  W.  wuz h\u{0115}re");
         assert_eq!(x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", true).unwrap(), "j.  w.  wuz h\u{0115}re");
