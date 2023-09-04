@@ -1,15 +1,15 @@
 //! An implementation of the "stringprep" algorithm defined in [RFC 3454][].
 //!
 //! [RFC 3454]: https://tools.ietf.org/html/rfc3454
-#![doc(html_root_url="https://docs.rs/stringprep/0.1.2")]
+#![doc(html_root_url = "https://docs.rs/stringprep/0.1.2")]
 #![warn(missing_docs)]
+extern crate finl_unicode;
 extern crate unicode_bidi;
 extern crate unicode_normalization;
-extern crate finl_unicode;
 
+use finl_unicode::categories::CharacterCategories;
 use std::borrow::Cow;
 use std::fmt;
-use finl_unicode::categories::CharacterCategories;
 use unicode_normalization::UnicodeNormalization;
 
 mod rfc3454;
@@ -37,7 +37,9 @@ impl fmt::Display for Error {
         match self.0 {
             ErrorCause::ProhibitedCharacter(c) => write!(fmt, "prohibited character `{}`", c),
             ErrorCause::ProhibitedBidirectionalText => write!(fmt, "prohibited bidirectional text"),
-            ErrorCause::StartsWithCombiningCharacter => write!(fmt, "starts with combining character"),
+            ErrorCause::StartsWithCombiningCharacter => {
+                write!(fmt, "starts with combining character")
+            }
             ErrorCause::EmptyString => write!(fmt, "empty string"),
         }
     }
@@ -59,22 +61,23 @@ pub fn saslprep(s: &str) -> Result<Cow<'_, str>, Error> {
     }
 
     // 2.1 Mapping
-    let mapped = s.chars()
-        .map(|c| if tables::non_ascii_space_character(c) {
-                 ' '
-             } else {
-                 c
-             })
+    let mapped = s
+        .chars()
+        .map(|c| {
+            if tables::non_ascii_space_character(c) {
+                ' '
+            } else {
+                c
+            }
+        })
         .filter(|&c| !tables::commonly_mapped_to_nothing(c));
 
     // 2.2 Normalization
     let normalized = mapped.nfkc().collect::<String>();
 
     // 2.3 Prohibited Output
-    let prohibited = normalized
-        .chars()
-        .find(|&c| {
-            tables::non_ascii_space_character(c) /* C.1.2 */ ||
+    let prohibited = normalized.chars().find(|&c| {
+        tables::non_ascii_space_character(c) /* C.1.2 */ ||
             tables::ascii_control_character(c) /* C.2.1 */ ||
             tables::non_ascii_control_character(c) /* C.2.2 */ ||
             tables::private_use(c) /* C.3 */ ||
@@ -84,7 +87,7 @@ pub fn saslprep(s: &str) -> Result<Cow<'_, str>, Error> {
             tables::inappropriate_for_canonical_representation(c) /* C.7 */ ||
             tables::change_display_properties_or_deprecated(c) /* C.8 */ ||
             tables::tagging_character(c) /* C.9 */
-        });
+    });
     if let Some(c) = prohibited {
         return Err(Error(ErrorCause::ProhibitedCharacter(c)));
     }
@@ -117,8 +120,9 @@ fn is_prohibited_bidirectional_text(s: &str) -> bool {
         // 3) If a string contains any RandALCat character, a RandALCat
         // character MUST be the first character of the string, and a
         // RandALCat character MUST be the last character of the string.
-        if !tables::bidi_r_or_al(s.chars().next().unwrap()) ||
-           !tables::bidi_r_or_al(s.chars().next_back().unwrap()) {
+        if !tables::bidi_r_or_al(s.chars().next().unwrap())
+            || !tables::bidi_r_or_al(s.chars().next_back().unwrap())
+        {
             return true;
         }
     }
@@ -140,7 +144,8 @@ pub fn nameprep(s: &str) -> Result<Cow<'_, str>, Error> {
     }
 
     // 3. Mapping
-    let mapped = s.chars()
+    let mapped = s
+        .chars()
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
         .flat_map(tables::case_fold_for_nfkc);
 
@@ -148,10 +153,8 @@ pub fn nameprep(s: &str) -> Result<Cow<'_, str>, Error> {
     let normalized = mapped.nfkc().collect::<String>();
 
     // 5. Prohibited Output
-    let prohibited = normalized
-        .chars()
-        .find(|&c| {
-            tables::non_ascii_space_character(c) /* C.1.2 */ ||
+    let prohibited = normalized.chars().find(|&c| {
+        tables::non_ascii_space_character(c) /* C.1.2 */ ||
             tables::non_ascii_control_character(c) /* C.2.2 */ ||
             tables::private_use(c) /* C.3 */ ||
             tables::non_character_code_point(c) /* C.4 */ ||
@@ -160,7 +163,7 @@ pub fn nameprep(s: &str) -> Result<Cow<'_, str>, Error> {
             tables::inappropriate_for_canonical_representation(c) /* C.7 */ ||
             tables::change_display_properties_or_deprecated(c) /* C.9 */ ||
             tables::tagging_character(c) /* C.9 */
-        });
+    });
     if let Some(c) = prohibited {
         return Err(Error(ErrorCause::ProhibitedCharacter(c)));
     }
@@ -195,7 +198,8 @@ pub fn nodeprep(s: &str) -> Result<Cow<'_, str>, Error> {
     }
 
     // A.3. Mapping
-    let mapped = s.chars()
+    let mapped = s
+        .chars()
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
         .flat_map(tables::case_fold_for_nfkc);
 
@@ -203,10 +207,8 @@ pub fn nodeprep(s: &str) -> Result<Cow<'_, str>, Error> {
     let normalized = mapped.nfkc().collect::<String>();
 
     // A.5. Prohibited Output
-    let prohibited = normalized
-        .chars()
-        .find(|&c| {
-            tables::ascii_space_character(c) /* C.1.1 */ ||
+    let prohibited = normalized.chars().find(|&c| {
+        tables::ascii_space_character(c) /* C.1.1 */ ||
             tables::non_ascii_space_character(c) /* C.1.2 */ ||
             tables::ascii_control_character(c) /* C.2.1 */ ||
             tables::non_ascii_control_character(c) /* C.2.2 */ ||
@@ -218,7 +220,7 @@ pub fn nodeprep(s: &str) -> Result<Cow<'_, str>, Error> {
             tables::change_display_properties_or_deprecated(c) /* C.9 */ ||
             tables::tagging_character(c) /* C.9 */ ||
             prohibited_node_character(c)
-        });
+    });
     if let Some(c) = prohibited {
         return Err(Error(ErrorCause::ProhibitedCharacter(c)));
     }
@@ -240,10 +242,7 @@ pub fn nodeprep(s: &str) -> Result<Cow<'_, str>, Error> {
 
 // Additional characters not allowed in JID nodes, by RFC3920.
 fn prohibited_node_character(c: char) -> bool {
-    match c {
-        '"' | '&' | '\'' | '/' | ':' | '<' | '>' | '@' => true,
-        _ => false
-    }
+    matches!(c, '"' | '&' | '\'' | '/' | ':' | '<' | '>' | '@')
 }
 
 /// Prepares a string with the Resourceprep profile of the stringprep algorithm.
@@ -253,14 +252,13 @@ fn prohibited_node_character(c: char) -> bool {
 /// [RFC 3920, Appendix B]: https://tools.ietf.org/html/rfc3920#appendix-B
 pub fn resourceprep(s: &str) -> Result<Cow<'_, str>, Error> {
     // fast path for ascii text
-    if s.chars()
-        .all(|c| matches!(c, ' '..='~'))
-    {
+    if s.chars().all(|c| matches!(c, ' '..='~')) {
         return Ok(Cow::Borrowed(s));
     }
 
     // B.3. Mapping
-    let mapped = s.chars()
+    let mapped = s
+        .chars()
         .filter(|&c| !tables::commonly_mapped_to_nothing(c))
         .collect::<String>();
 
@@ -268,10 +266,8 @@ pub fn resourceprep(s: &str) -> Result<Cow<'_, str>, Error> {
     let normalized = mapped.nfkc().collect::<String>();
 
     // B.5. Prohibited Output
-    let prohibited = normalized
-        .chars()
-        .find(|&c| {
-            tables::non_ascii_space_character(c) /* C.1.2 */ ||
+    let prohibited = normalized.chars().find(|&c| {
+        tables::non_ascii_space_character(c) /* C.1.2 */ ||
             tables::ascii_control_character(c) /* C.2.1 */ ||
             tables::non_ascii_control_character(c) /* C.2.2 */ ||
             tables::private_use(c) /* C.3 */ ||
@@ -281,7 +277,7 @@ pub fn resourceprep(s: &str) -> Result<Cow<'_, str>, Error> {
             tables::inappropriate_for_canonical_representation(c) /* C.7 */ ||
             tables::change_display_properties_or_deprecated(c) /* C.9 */ ||
             tables::tagging_character(c) /* C.9 */
-        });
+    });
     if let Some(c) = prohibited {
         return Err(Error(ErrorCause::ProhibitedCharacter(c)));
     }
@@ -301,27 +297,6 @@ pub fn resourceprep(s: &str) -> Result<Cow<'_, str>, Error> {
     Ok(Cow::Owned(normalized))
 }
 
-/// Determines if `c` is to be removed according to section 7.2 of
-/// [ITU-T Recommendation X.520 (2019)](https://www.itu.int/rec/T-REC-X.520-201910-I/en).
-fn x520_mapped_to_nothing(c: char) -> bool {
-    match c {
-        '\u{00AD}' | '\u{1806}' | '\u{034F}' | '\u{180B}'..='\u{180D}' |
-        '\u{FE00}'..='\u{FE0F}' | '\u{FFFC}' | '\u{200B}' => true,
-        // Technically control characters, but mapped to whitespace in X.520.
-        '\u{09}' | '\u{0A}'..='\u{0D}' | '\u{85}' => false,
-        _ => c.is_control(),
-    }
-}
-
-/// Determines if `c` is to be replaced by SPACE (0x20) according to section 7.2 of
-/// [ITU-T Recommendation X.520 (2019)](https://www.itu.int/rec/T-REC-X.520-201910-I/en).
-fn x520_mapped_to_space(c: char) -> bool {
-    match c {
-        '\u{09}' | '\u{0A}'..='\u{0D}' | '\u{85}' => true,
-        _ => c.is_separator(),
-    }
-}
-
 /// Prepares a string according to the procedures described in Section 7 of
 /// [ITU-T Recommendation X.520 (2019)](https://www.itu.int/rec/T-REC-X.520-201910-I/en).
 ///
@@ -329,10 +304,12 @@ fn x520_mapped_to_space(c: char) -> bool {
 /// spaces as described in Section 7.6, because the characters needing removal
 /// will vary across the matching rules and ASN.1 syntaxes used.
 pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
-    if s.len() == 0 {
+    if s.is_empty() {
         return Err(Error(ErrorCause::EmptyString));
     }
-    if s.chars().all(|c| matches!(c, ' '..='~') && (!case_fold || c.is_ascii_lowercase())) {
+    if s.chars()
+        .all(|c| matches!(c, ' '..='~') && (!case_fold || c.is_ascii_lowercase()))
+    {
         return Ok(Cow::Borrowed(s));
     }
 
@@ -340,9 +317,16 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
     // Already done because &str is enforced to be Unicode.
 
     // 2. Map
-    let mapped = s.chars()
-        .filter(|&c| !x520_mapped_to_nothing(c))
-        .map(|c| if x520_mapped_to_space(c) { ' ' } else { c });
+    let mapped = s
+        .chars()
+        .filter(|&c| !tables::x520_mapped_to_nothing(c))
+        .map(|c| {
+            if tables::x520_mapped_to_space(c) {
+                ' '
+            } else {
+                c
+            }
+        });
 
     // 3. Normalize
     let normalized = if case_fold {
@@ -354,24 +338,27 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
     };
 
     // 4. Prohibit
-    let prohibited = normalized.chars().find(|&c| tables::unassigned_code_point(c)
-        || tables::private_use(c)
-        || tables::non_character_code_point(c)
-        || tables::surrogate_code(c)
-        || c == '\u{FFFD}' // REPLACEMENT CHARACTER
+    let prohibited = normalized.chars().find(
+        |&c| {
+            tables::unassigned_code_point(c)
+                || tables::private_use(c)
+                || tables::non_character_code_point(c)
+                || tables::surrogate_code(c)
+                || c == '\u{FFFD}'
+        }, // REPLACEMENT CHARACTER
     );
     if let Some(c) = prohibited {
         return Err(Error(ErrorCause::ProhibitedCharacter(c)));
     }
     // From ITU-T Recommendation X.520, Section 7.4:
     // "The first code point of a string is prohibited from being a combining character."
-    let first_char = s.chars().next();
-    if let Some(c) = first_char {
-        if c.is_mark() {
-            return Err(Error(ErrorCause::StartsWithCombiningCharacter));
+    match s.chars().next() {
+        Some(c) => {
+            if c.is_mark() {
+                return Err(Error(ErrorCause::StartsWithCombiningCharacter));
+            }
         }
-    } else {
-        return Err(Error(ErrorCause::EmptyString));
+        None => return Err(Error(ErrorCause::EmptyString)),
     }
 
     // 5. Check bidi
@@ -389,32 +376,32 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
 mod test {
     use super::*;
 
-	fn assert_prohibited_character<T>(result: Result<T, Error>) {
-		match result {
-			Err(Error(ErrorCause::ProhibitedCharacter(_))) => (),
-			_ => assert!(false)
-		}
-	}
+    fn assert_prohibited_character<T>(result: Result<T, Error>) {
+        match result {
+            Err(Error(ErrorCause::ProhibitedCharacter(_))) => (),
+            _ => panic!(),
+        }
+    }
 
     fn assert_starts_with_combining_char<T>(result: Result<T, Error>) {
-		match result {
-			Err(Error(ErrorCause::StartsWithCombiningCharacter)) => (),
-			_ => assert!(false)
-		}
-	}
+        match result {
+            Err(Error(ErrorCause::StartsWithCombiningCharacter)) => (),
+            _ => panic!(),
+        }
+    }
 
     // RFC4013, 3. Examples
     #[test]
     fn saslprep_examples() {
-		assert_prohibited_character(saslprep("\u{0007}"));
+        assert_prohibited_character(saslprep("\u{0007}"));
     }
 
-	#[test]
-	fn nodeprep_examples() {
+    #[test]
+    fn nodeprep_examples() {
         assert_prohibited_character(nodeprep(" "));
         assert_prohibited_character(nodeprep("\u{00a0}"));
         assert_prohibited_character(nodeprep("foo@bar"));
-	}
+    }
 
     #[test]
     fn resourceprep_examples() {
@@ -424,8 +411,14 @@ mod test {
     #[test]
     fn x520prep_examples() {
         assert_eq!(x520prep("foo@bar", true).unwrap(), "foo@bar");
-        assert_eq!(x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", false).unwrap(), "J.  W.  wuz h\u{0115}re");
-        assert_eq!(x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", true).unwrap(), "j.  w.  wuz h\u{0115}re");
+        assert_eq!(
+            x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", false).unwrap(),
+            "J.  W.  wuz h\u{0115}re"
+        );
+        assert_eq!(
+            x520prep("J.\u{FE00} \u{9}W. \u{B}wuz h\u{0115}re", true).unwrap(),
+            "j.  w.  wuz h\u{0115}re"
+        );
         assert_eq!(x520prep("UPPERCASED", true).unwrap(), "uppercased");
         assert_starts_with_combining_char(x520prep("\u{0306}hello", true));
     }
