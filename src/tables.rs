@@ -1,5 +1,4 @@
 //! Character Tables
-use finl_unicode::categories::CharacterCategories;
 use std::cmp::Ordering;
 use std::str::Chars;
 use unicode_bidi::{bidi_class, BidiClass};

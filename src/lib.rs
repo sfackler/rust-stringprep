@@ -2,11 +2,9 @@
 //!
 //! [RFC 3454]: https://tools.ietf.org/html/rfc3454
 #![warn(missing_docs)]
-extern crate finl_unicode;
 extern crate unicode_bidi;
 extern crate unicode_normalization;
 
-use finl_unicode::categories::CharacterCategories;
 use std::borrow::Cow;
 use std::fmt;
 use unicode_normalization::UnicodeNormalization;
