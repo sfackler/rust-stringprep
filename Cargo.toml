@@ -10,3 +10,4 @@ readme = "README.md"
 [dependencies]
 unicode-bidi = "0.3"
 unicode-normalization = "0.1"
+unicode-properties = "0.1.1"

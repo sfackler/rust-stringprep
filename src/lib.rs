@@ -4,10 +4,12 @@
 #![warn(missing_docs)]
 extern crate unicode_bidi;
 extern crate unicode_normalization;
+extern crate unicode_properties;
 
 use std::borrow::Cow;
 use std::fmt;
 use unicode_normalization::UnicodeNormalization;
+use unicode_properties::{GeneralCategoryGroup, UnicodeGeneralCategory};
 
 mod rfc3454;
 pub mod tables;
@@ -351,7 +353,7 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
     // "The first code point of a string is prohibited from being a combining character."
     match s.chars().next() {
         Some(c) => {
-            if c.is_mark() {
+            if c.general_category_group() == GeneralCategoryGroup::Mark {
                 return Err(Error(ErrorCause::StartsWithCombiningCharacter));
             }
         }
