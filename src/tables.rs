@@ -1,8 +1,8 @@
 //! Character Tables
-use finl_unicode::categories::CharacterCategories;
 use std::cmp::Ordering;
 use std::str::Chars;
 use unicode_bidi::{bidi_class, BidiClass};
+use unicode_properties::{GeneralCategoryGroup, UnicodeGeneralCategory};
 
 use super::rfc3454;
 
@@ -246,6 +246,6 @@ pub fn x520_mapped_to_nothing(c: char) -> bool {
 pub fn x520_mapped_to_space(c: char) -> bool {
     match c {
         '\u{09}' | '\u{0A}'..='\u{0D}' | '\u{85}' => true,
-        _ => c.is_separator(),
+        _ => c.general_category_group() == GeneralCategoryGroup::Separator,
     }
 }

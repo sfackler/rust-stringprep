@@ -8,6 +8,6 @@ repository = "https://github.com/sfackler/rust-stringprep"
 readme = "README.md"
 
 [dependencies]
-finl_unicode = "1.2.0"
 unicode-bidi = "0.3"
 unicode-normalization = "0.1"
+unicode-properties = "0.1.1"
