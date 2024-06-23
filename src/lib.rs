@@ -1,13 +1,18 @@
 //! An implementation of the "stringprep" algorithm defined in [RFC 3454][].
 //!
 //! [RFC 3454]: https://tools.ietf.org/html/rfc3454
+#![no_std]
 #![warn(missing_docs)]
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 extern crate unicode_bidi;
 extern crate unicode_normalization;
 extern crate unicode_properties;
 
-use std::borrow::Cow;
-use std::fmt;
+use alloc::borrow::Cow;
+use alloc::string::String;
+use core::fmt;
 use unicode_normalization::UnicodeNormalization;
 use unicode_properties::{GeneralCategoryGroup, UnicodeGeneralCategory};
 
@@ -44,6 +49,11 @@ impl fmt::Display for Error {
     }
 }
 
+// TODO: We can remove this feature check and use core::error::Error directly once it gets
+// stabilized, see https://github.com/rust-lang/rust/issues/103765
+//
+// For now we could use it in nightly with #![feature(error_in_core)] but hopefully not for long.
+#[cfg(feature = "std")]
 impl std::error::Error for Error {}
 
 /// Prepares a string with the SASLprep profile of the stringprep algorithm.

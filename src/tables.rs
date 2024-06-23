@@ -1,6 +1,6 @@
 //! Character Tables
-use std::cmp::Ordering;
-use std::str::Chars;
+use core::cmp::Ordering;
+use core::str::Chars;
 use unicode_bidi::{bidi_class, BidiClass};
 use unicode_properties::{GeneralCategoryGroup, UnicodeGeneralCategory};
 

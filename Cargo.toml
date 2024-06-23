@@ -11,3 +11,7 @@ readme = "README.md"
 unicode-bidi = "0.3"
 unicode-normalization = "0.1"
 unicode-properties = "0.1.1"
+
+[features]
+default = ["std"]
+std = []
