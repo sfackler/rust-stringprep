@@ -476,6 +476,38 @@ mod test {
     }
 
     #[test]
+    fn x520prep_maps_control_function_characters_to_nothing() {
+        // X.520 (2019), 7.2 includes control-function characters (Cf), not only Cc.
+        for case_fold in [false, true] {
+            for control in ['\u{200e}', '\u{200f}', '\u{202e}', '\u{2060}', '\u{feff}'] {
+                let input = format!("a{}b", control);
+                assert_eq!(x520prep(&input, case_fold).unwrap(), "ab");
+            }
+            assert!(matches!(
+                x520prep("\u{200e}", case_fold),
+                Err(Error(ErrorCause::EmptyString))
+            ));
+            assert_starts_with_combining_char(x520prep("\u{200e}\u{0306}hello", case_fold));
+        }
+    }
+
+    #[test]
+    fn x520prep_preserves_the_control_whitespace_exceptions() {
+        for case_fold in [false, true] {
+            for space in [
+                '\u{0009}', '\u{000a}', '\u{000b}', '\u{000c}', '\u{000d}', '\u{0085}',
+            ] {
+                let input = format!("a{}b", space);
+                assert_eq!(x520prep(&input, case_fold).unwrap(), "a b");
+            }
+            // Other categories are not broadly removed along with control-function characters.
+            assert_prohibited_character(x520prep("a\u{e000}b", case_fold));
+            assert_prohibited_character(x520prep("a\u{0221}b", case_fold));
+            assert_eq!(x520prep("a\u{2000}b", case_fold).unwrap(), "a b");
+        }
+    }
+
+    #[test]
     fn ascii_optimisations() {
         if let Cow::Owned(_) = nodeprep("nodepart").unwrap() {
             panic!("“nodepart” should get optimised as ASCII");

@@ -2,7 +2,7 @@
 use std::cmp::Ordering;
 use std::str::Chars;
 use unicode_bidi::{bidi_class, BidiClass};
-use unicode_properties::{GeneralCategoryGroup, UnicodeGeneralCategory};
+use unicode_properties::{GeneralCategory, GeneralCategoryGroup, UnicodeGeneralCategory};
 
 use super::rfc3454;
 
@@ -237,7 +237,10 @@ pub fn x520_mapped_to_nothing(c: char) -> bool {
         | '\u{200B}' => true,
         // Technically control characters, but mapped to whitespace in X.520.
         '\u{09}' | '\u{0A}'..='\u{0D}' | '\u{85}' => false,
-        _ => c.is_control(),
+        _ => matches!(
+            c.general_category(),
+            GeneralCategory::Control | GeneralCategory::Format
+        ),
     }
 }
 
