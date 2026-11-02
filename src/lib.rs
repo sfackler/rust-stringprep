@@ -331,6 +331,7 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
     let normalized = if case_fold {
         mapped
             .flat_map(tables::case_fold_for_nfkc)
+            .nfkc()
             .collect::<String>()
     } else {
         mapped.nfkc().collect::<String>()
@@ -351,7 +352,7 @@ pub fn x520prep(s: &str, case_fold: bool) -> Result<Cow<'_, str>, Error> {
     }
     // From ITU-T Recommendation X.520, Section 7.4:
     // "The first code point of a string is prohibited from being a combining character."
-    match s.chars().next() {
+    match normalized.chars().next() {
         Some(c) => {
             if c.general_category_group() == GeneralCategoryGroup::Mark {
                 return Err(Error(ErrorCause::StartsWithCombiningCharacter));
@@ -420,6 +421,58 @@ mod test {
         );
         assert_eq!(x520prep("UPPERCASED", true).unwrap(), "uppercased");
         assert_starts_with_combining_char(x520prep("\u{0306}hello", true));
+    }
+
+    #[test]
+    fn x520prep_normalizes_after_case_folding() {
+        // X.520 (2019), 7.2 then 7.3: B.2 case-folding precedes Form KC.
+        for (input, expected) in [
+            ("\u{2168}", "ix"),
+            ("\u{ff21}", "a"),
+            ("A\u{030a}", "\u{00e5}"),
+        ] {
+            assert_eq!(x520prep(input, true).unwrap(), expected);
+        }
+        assert_eq!(x520prep("\u{2168}", false).unwrap(), "IX");
+        assert_eq!(x520prep("A\u{030a}", false).unwrap(), "\u{00c5}");
+    }
+
+    #[test]
+    fn x520prep_prohibits_empty_after_mapping() {
+        // X.520 (2019), 7.4 judges the string produced by mapping/normalization.
+        for case_fold in [false, true] {
+            for input in ["", "\u{00ad}", "\u{034f}", "\u{0001}"] {
+                assert!(
+                    matches!(
+                        x520prep(input, case_fold),
+                        Err(Error(ErrorCause::EmptyString))
+                    ),
+                    "{:?} must not prepare to an empty string",
+                    input
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn x520prep_prohibits_initial_marks_after_mapping() {
+        for case_fold in [false, true] {
+            assert_starts_with_combining_char(x520prep("\u{00ad}\u{0306}hello", case_fold));
+        }
+    }
+
+    #[test]
+    fn x520prep_accepts_a_removed_initial_mark() {
+        // The first remaining character, rather than the removed Mark, is judged.
+        for case_fold in [false, true] {
+            assert_eq!(x520prep("\u{034f}hello", case_fold).unwrap(), "hello");
+        }
+    }
+
+    #[test]
+    fn x520prep_leaves_insignificant_space_removal_to_the_matching_rule() {
+        assert_eq!(x520prep("\u{00ad}  X  ", true).unwrap(), "  x  ");
+        assert_eq!(x520prep("  X  ", false).unwrap(), "  X  ");
     }
 
     #[test]
