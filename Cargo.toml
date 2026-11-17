@@ -11,3 +11,8 @@ readme = "README.md"
 unicode-bidi = "0.3"
 unicode-normalization = "0.1"
 unicode-properties = "0.1.1"
+# Optional: enables `saslprep_into`, which wipes the memory it uses (for passwords).
+zeroize = { version = "1", optional = true }
+
+[package.metadata.docs.rs]
+features = ["zeroize"]

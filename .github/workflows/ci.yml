@@ -46,6 +46,8 @@ jobs:
           path: target
           key: clippy-target-${{ runner.os }}-${{ steps.rust-version.outputs.version }}-${{ hashFiles('Cargo.lock') }}y
       - run: cargo clippy --all --all-targets
+      - run: cargo clippy --all --all-targets --features zeroize
+      - run: cargo test --features zeroize
 
   test:
     name: test
@@ -64,6 +66,9 @@ jobs:
           restore-keys: |
             index-${{ runner.os }}-
       - run: cargo generate-lockfile
+      # zeroize 1.9 and later use edition 2024, which cargo 1.56 cannot parse; the optional
+      # dependency is not built here, but it is fetched.
+      - run: cargo update -p zeroize --precise 1.8.2
       - uses: actions/cache@v3
         with:
           path: ~/.cargo/registry/cache
