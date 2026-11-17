@@ -47,8 +47,36 @@ jobs:
           key: clippy-target-${{ runner.os }}-${{ steps.rust-version.outputs.version }}-${{ hashFiles('Cargo.lock') }}y
       - run: cargo clippy --all --all-targets
 
-  test:
-    name: test
+  test-no_std:
+    name: test no_std on Rust 1.81.0
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: sfackler/actions/rustup@master
+        with:
+          version: 1.81.0
+      - run: echo "version=$(rustc --version)" >> $GITHUB_OUTPUT
+        id: rust-version
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry/index
+          key: index-${{ runner.os }}-${{ github.run_number }}
+          restore-keys: |
+            index-${{ runner.os }}-
+      - run: cargo generate-lockfile
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry/cache
+          key: registry-${{ runner.os }}-${{ steps.rust-version.outputs.version }}-${{ hashFiles('Cargo.lock') }}
+      - run: cargo fetch
+      - uses: actions/cache@v3
+        with:
+          path: target
+          key: test-target-${{ runner.os }}-${{ steps.rust-version.outputs.version }}-${{ hashFiles('Cargo.lock') }}y
+      - run: cargo test --all
+
+  test-std:
+    name: test std on Rust 1.56.0
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -73,4 +101,4 @@ jobs:
         with:
           path: target
           key: test-target-${{ runner.os }}-${{ steps.rust-version.outputs.version }}-${{ hashFiles('Cargo.lock') }}y
-      - run: cargo test --all
+      - run: cargo test --all --features=std

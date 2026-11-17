@@ -8,6 +8,9 @@ repository = "https://github.com/sfackler/rust-stringprep"
 readme = "README.md"
 
 [dependencies]
-unicode-bidi = "0.3"
-unicode-normalization = "0.1"
-unicode-properties = "0.1.1"
+unicode-bidi = { version = "0.3", default-features = false, features = ["hardcoded-data"] }
+unicode-normalization = { version = "0.1", default-features = false }
+unicode-properties = { version = "0.1.1", default-features = false, features = ["general-category"] }
+
+[features]
+std = ["unicode-bidi/std", "unicode-normalization/std"]
